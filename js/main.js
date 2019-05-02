@@ -113,7 +113,7 @@ let startGunRotationY;
             player.canShoot = true;
             bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]
             
-            console.log(selectedWeapon, bulletsLeft)
+            
         } );
         controls.addEventListener( 'unlock', function () {
             blocker.style.display = 'block';
@@ -353,7 +353,7 @@ let startGunRotationY;
         let time = performance.now();
         let delta = ( time - prevTime ) / 1000;
         
-       console.log(bulletNumber)
+       
 
         /* shooting, movement including jumping */
         if ( controls.isLocked === true ) {
@@ -438,7 +438,7 @@ let startGunRotationY;
                     circle.position.set(shotPosition.x , 0.1, shotPosition.z)
                     circle.rotation.x = -Math.PI / 2
                 }   
-                console.log(shotPosition)
+               
                 
                 
                     countdownToShot = weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t
