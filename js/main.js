@@ -31,6 +31,7 @@ var collidableMeshList = [];
 let recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
 let bulletNumber = 0;
 let countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot
+let shooting = false;
 let startGunRotationX;
 let startGunRotationY;
 let circleArray = [];
@@ -112,9 +113,9 @@ let circle;
             selectBarrelMod() //selects barrelmod
             changeFov(); //updates the fov
             changeMouseSensitivity() // updates mouse sens
+            changeCountdownToShot() // updates the countodnw to the first shot
             recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
             bulletNumber = 0;
-            countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot
             player.canShoot = true;
             bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]
             
@@ -288,12 +289,14 @@ let circle;
             /* startGunRotationX = controls.getObject().children[ 0 ].rotation.x
             startGunRotationY =  controls.getObject().rotation.y */
             mouseDown = true;
+            shooting = true;
         }
         function remove(id) {
             scene.remove(scene.getObjectByName(id));
         }
         const onMouseUp = function() {
             mouseDown = false;
+            shooting = false;
             bulletNumber = 0;
             /* controls.getObject().children[ 0 ].rotation.x = startGunRotationX
             controls.getObject().rotation.y =  startGunRotationY */
@@ -311,6 +314,10 @@ let circle;
         createPlayer();
         
     } //end of init
+    function changeCountdownToShot() {
+        countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot
+    }
+
     function clearBullets() {
             for(let i = 0; i < circleArray.length; i++){
                 let o = scene.getObjectByName('hit');
@@ -415,9 +422,10 @@ let circle;
                 controls.getObject().position.y = 10;
                 player.canJump = true;
             }
-
+            
             /* shooting */
             if (mouseDown && countdownToShot <= 0 && bulletsLeft > 0) {
+                
                 let shotPosition = new THREE.Vector3()
                 var cameraDirection = controls.getDirection(new THREE.Vector3(0, 0, 0)).normalize().clone();
                 var rayCaster = new THREE.Raycaster();  
@@ -458,8 +466,8 @@ let circle;
                 }   
                
                 
-                
-                    countdownToShot = weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t
+                        countdownToShot = weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t
+
                     let recoilXMin
                     let recoilXMax
                     let recoilYMin
@@ -498,10 +506,16 @@ let circle;
                     
                 
                 }
+                
                 timeToAnimate = time - timeToAnimate
-                if(countdownToShot > 0) countdownToShot -= (delta + timeToAnimate); ; //gives the most accurate countdown to shot. Takes into account time between frames and time during frames.
                 
-                
+                if(countdownToShot > 0) {
+                    if(shooting) {
+                        countdownToShot -= (delta + timeToAnimate); ; //gives the most accurate countdown to shot. Takes into account time between frames and time during frames.
+                    } else {
+                        countdownToShot = countdownToShot
+                    }
+                }
             prevTime = time;
             
             
