@@ -25,6 +25,8 @@
 				
 				<br />
 				<br />
+				<br>
+				<br>
 				<div class="FOVslidecontainer">
 					<p>FOV</p>
 					<input type="range" id="myRange" min="1" max="180" value="75" class="slider" oninput="fovValue.value=myRange.value">
@@ -37,6 +39,10 @@
 					<br>
 					<input type="number" id="MouseSensNumber" min="0.2" max="20" value="3.5" oninput="MouseSensRange.value=MouseSensNumber.value"> 
 				</div>
+				<br>
+				<input type="checkbox" id="reverseMouseUpDownCheckbox"> reverse mouse up/down 
+				<br>
+				<input type="checkbox" id="reverseMouseLeftRightCheckbox"> reverse mouse left/right
 				<br />
 				<p id="Instructions">Spray training for Apex Legends(not suitable for people who are prone to seiziures)</p>
 				<p id="Instructions">Use W, A, S, D to move, space to jump</p>
@@ -45,16 +51,12 @@
 				<p id="Instructions">Tab or escape to get back to menu while playing</p>
 				<br />
 				<br />
-				<br />
-				<br />
-				<br />
-				<br />
-				<br />
-                <br />
+
                 
                 <button id="playButton">Play game</button>
                 <br/>
-                <br/>
+				<br/>
+				<br />
 				<div>
 					<select id="weaponSelector" >
 						<optgroup label = "Light Machine Gun">
@@ -84,9 +86,10 @@
 						<option value="barrelExtensionLevelTwo">Barrel extension level 2</option>
 						<option value="barrelExtensionLevelThree">Barrel extension level 3</option>
 					</select>
-                </div>
+				</div>
                 <br/>
-                <br/>
+				<br/>
+				<button id="clearBulletsButton">Remove hits</button>
                 <br/>
                 <br/>
                 <br/>

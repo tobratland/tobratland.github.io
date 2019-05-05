@@ -21,6 +21,7 @@ let meshes = {}
 let weaponSelector = document.getElementById("weaponSelector")
 let magazineSelector = document.getElementById("magazineSelector")
 let barrelAttachmentSelector = document.getElementById("barrelAttachment")
+let clearBulletsButton = document.getElementById("clearBulletsButton")
 let selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value
 let selectedMagazine = magazineSelector.options[magazineSelector.selectedIndex].value
 let selectedBarrelAttachment = barrelAttachmentSelector.options[barrelAttachmentSelector.selectedIndex].value
@@ -30,11 +31,10 @@ var collidableMeshList = [];
 let recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
 let bulletNumber = 0;
 let countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot
-
 let startGunRotationX;
 let startGunRotationY;
-
-
+let circleArray = [];
+let circle;
 
 
 
@@ -48,7 +48,7 @@ let startGunRotationY;
     crosshairCtx.strokeStyle = '#39ff14';
     crosshairCtx.fillStyle = '#39ff14';
     crosshairCtx.lineWidth = 2;
-
+    crosshairCanvas.style.display = "none"
     crosshairCtx.clearRect(0, 0, 30, 30);
     crosshairCtx.fillRect(13, 13, 4, 4);
     
@@ -70,6 +70,7 @@ let startGunRotationY;
         const blocker = document.getElementById( 'blocker' ); //defines up the blocker element from the document
         const instructions = document.getElementById( 'settingsPage' ); // defines up the instructions element from the document
         const instructionButton = document.getElementById( 'playButton' )
+        
 
         //create the scene
         scene = new THREE.Scene();
@@ -98,10 +99,14 @@ let startGunRotationY;
         instructionButton.addEventListener( 'click', function () {
             controls.lock();
         }, false );
+        clearBulletsButton.addEventListener("click", function() { //removes hits from scene.
+            clearBullets()
+        },false)
         //when the player locks the controls, aka clicks play and leaves the options screen
         controls.addEventListener( 'lock', function () {
             instructions.style.display = 'none';
             blocker.style.display = 'none';
+            crosshairCanvas.style.display = "block"
             selectWeapon(); //selects weapon
             selectMagazine() //selects magazinesize
             selectBarrelMod() //selects barrelmod
@@ -115,8 +120,10 @@ let startGunRotationY;
             
             
         } );
+        
         controls.addEventListener( 'unlock', function () {
             blocker.style.display = 'block';
+            crosshairCanvas.style.display = "none"
             instructions.style.display = '';
             player.canShoot = false;
         } );
@@ -282,6 +289,9 @@ let startGunRotationY;
             startGunRotationY =  controls.getObject().rotation.y */
             mouseDown = true;
         }
+        function remove(id) {
+            scene.remove(scene.getObjectByName(id));
+        }
         const onMouseUp = function() {
             mouseDown = false;
             bulletNumber = 0;
@@ -290,10 +300,9 @@ let startGunRotationY;
         };
         const reload = function() {
             bulletNumber = 0;
-            bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]
-            
-            
+            bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]            
         }
+
         document.addEventListener( 'keydown', onKeyDown, false );
         document.addEventListener( 'keyup', onKeyUp, false );
         window.addEventListener( "mousedown", onMouseDown, false);
@@ -302,7 +311,13 @@ let startGunRotationY;
         createPlayer();
         
     } //end of init
-
+    function clearBullets() {
+            for(let i = 0; i < circleArray.length; i++){
+                let o = scene.getObjectByName('hit');
+                scene.remove( o );
+            }
+            circleArray = []
+    }
     function selectWeapon() {
         selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value
     }
@@ -410,7 +425,7 @@ let startGunRotationY;
                 //setting up for the hitpoint
                 var hitGeometry = new THREE.CircleGeometry( 0.2, 16 );
                 var hitMateral = new THREE.MeshBasicMaterial( { color: 0x0E0909 } );
-                var circle = new THREE.Mesh( hitGeometry, hitMateral );
+                circle = new THREE.Mesh( hitGeometry, hitMateral );
                 circle.material.side = THREE.DoubleSide
                 rayCaster.set( controls.getObject().position, cameraDirection );
                 var intersects = rayCaster.intersectObjects( scene.children );
@@ -422,6 +437,9 @@ let startGunRotationY;
                 }
                 circle.alive = true;
                 scene.add( circle );
+                circle.name = "hit"
+                circleArray.push(circle)
+
                 if(shotPosition.x >= world.MAP_SIZE / 2 - 1) {
                     circle.position.set(shotPosition.x - 0.1, shotPosition.y, shotPosition.z)
                     circle.rotation.y = -Math.PI / 2
@@ -472,8 +490,6 @@ let startGunRotationY;
                     controls.getObject().children[ 0 ].rotation.x = controls.getObject().children[ 0 ].rotation.x + (randomNumberinRange(recoilYMin, recoilYMax)) * 0.00030
                     controls.getObject().rotation.y = controls.getObject().rotation.y + (randomNumberinRange(recoilXMin, recoilXMax)) * 0.00030
                   
-                    /* controls.getObject().children[ 0 ].rotation.x = controls.getObject().children[ 0 ].rotation.x + (recoilPattern[bulletNumber].y * 0.00030)
-                    controls.getObject().rotation.y = controls.getObject().rotation.y + (recoilPattern[bulletNumber].x * 0.00030)  */
                     
 
                     bulletNumber++;     
