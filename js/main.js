@@ -6,6 +6,7 @@ import { weapons } from "./weapons.js"
 
 
 let camera, scene, renderer, controls, loadingManager;
+let wallNorth, wallEast, wallSouth, wallWest
 let prevTime = performance.now();
 let direction = new THREE.Vector3();
 let moveForward = false;
@@ -26,16 +27,14 @@ let selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value
 let selectedMagazine = magazineSelector.options[magazineSelector.selectedIndex].value
 let selectedBarrelAttachment = barrelAttachmentSelector.options[barrelAttachmentSelector.selectedIndex].value
 let bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]
-//for collision
 var collidableMeshList = [];
 let recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
 let bulletNumber = 0;
 let countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot
 let shooting = false;
-let startGunRotationX;
-let startGunRotationY;
 let circleArray = [];
 let circle;
+
 
 
 
@@ -88,7 +87,7 @@ let circle;
         loadingManager = new THREE.LoadingManager();
 
         loadingManager.onProgress = function (item, loaded, total) {
-            console.log(item, loaded, total);
+            console.log(item, loaded, total, );
         }
         loadingManager.onLoad = function() {
             console.log("loaded all resources");
@@ -105,8 +104,7 @@ let circle;
         },false)
         //when the player locks the controls, aka clicks play and leaves the options screen
         controls.addEventListener( 'lock', function () {
-            instructions.style.display = 'none';
-            blocker.style.display = 'none';
+            blocker.style.visibility = 'hidden';
             crosshairCanvas.style.display = "block"
             selectWeapon(); //selects weapon
             selectMagazine() //selects magazinesize
@@ -123,9 +121,8 @@ let circle;
         } );
         
         controls.addEventListener( 'unlock', function () {
-            blocker.style.display = 'block';
+            blocker.style.visibility = 'visible';
             crosshairCanvas.style.display = "none"
-            instructions.style.display = '';
             player.canShoot = false;
         } );
         
@@ -185,10 +182,10 @@ let circle;
         const wallcolor = world.wallColor; //sets wall atributes from world.js
         var geometry = new THREE.PlaneGeometry( wallwidth, wallheight ); 
         var material = new THREE.MeshBasicMaterial( {color: wallcolor, side: THREE.DoubleSide} );
-        var wallNorth = new THREE.Mesh( geometry, material );
-        var wallSouth = new THREE.Mesh( geometry, material );
-        var wallEast = new THREE.Mesh( geometry, material );
-        var wallWest = new THREE.Mesh( geometry, material );
+        wallNorth = new THREE.Mesh( geometry, material );
+        wallSouth = new THREE.Mesh( geometry, material );
+        wallEast = new THREE.Mesh( geometry, material );
+        wallWest = new THREE.Mesh( geometry, material );
         scene.add( wallNorth, wallSouth, wallEast, wallWest); //Adds walls to scene
         collidableMeshList.push(wallNorth, wallSouth, wallEast, wallWest)
 
@@ -291,9 +288,7 @@ let circle;
             mouseDown = true;
             shooting = true;
         }
-        function remove(id) {
-            scene.remove(scene.getObjectByName(id));
-        }
+        
         const onMouseUp = function() {
             mouseDown = false;
             shooting = false;
