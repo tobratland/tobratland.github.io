@@ -6,6 +6,7 @@ import { weapons } from "./weapons.js"
 
 
 let camera, scene, renderer, controls, loadingManager;
+let wallNorth, wallEast, wallSouth, wallWest
 let prevTime = performance.now();
 let direction = new THREE.Vector3();
 let moveForward = false;
@@ -21,19 +22,18 @@ let meshes = {}
 let weaponSelector = document.getElementById("weaponSelector")
 let magazineSelector = document.getElementById("magazineSelector")
 let barrelAttachmentSelector = document.getElementById("barrelAttachment")
+let clearBulletsButton = document.getElementById("clearBulletsButton")
 let selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value
 let selectedMagazine = magazineSelector.options[magazineSelector.selectedIndex].value
 let selectedBarrelAttachment = barrelAttachmentSelector.options[barrelAttachmentSelector.selectedIndex].value
 let bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]
-//for collision
 var collidableMeshList = [];
 let recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
 let bulletNumber = 0;
 let countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot
-
-let startGunRotationX;
-let startGunRotationY;
-
+let shooting = false;
+let circleArray = [];
+let circle;
 
 
 
@@ -48,7 +48,7 @@ let startGunRotationY;
     crosshairCtx.strokeStyle = '#39ff14';
     crosshairCtx.fillStyle = '#39ff14';
     crosshairCtx.lineWidth = 2;
-
+    crosshairCanvas.style.display = "none"
     crosshairCtx.clearRect(0, 0, 30, 30);
     crosshairCtx.fillRect(13, 13, 4, 4);
     
@@ -70,6 +70,7 @@ let startGunRotationY;
         const blocker = document.getElementById( 'blocker' ); //defines up the blocker element from the document
         const instructions = document.getElementById( 'settingsPage' ); // defines up the instructions element from the document
         const instructionButton = document.getElementById( 'playButton' )
+        
 
         //create the scene
         scene = new THREE.Scene();
@@ -86,7 +87,7 @@ let startGunRotationY;
         loadingManager = new THREE.LoadingManager();
 
         loadingManager.onProgress = function (item, loaded, total) {
-            console.log(item, loaded, total);
+            console.log(item, loaded, total, );
         }
         loadingManager.onLoad = function() {
             console.log("loaded all resources");
@@ -98,26 +99,30 @@ let startGunRotationY;
         instructionButton.addEventListener( 'click', function () {
             controls.lock();
         }, false );
+        clearBulletsButton.addEventListener("click", function() { //removes hits from scene.
+            clearBullets()
+        },false)
         //when the player locks the controls, aka clicks play and leaves the options screen
         controls.addEventListener( 'lock', function () {
-            instructions.style.display = 'none';
-            blocker.style.display = 'none';
+            blocker.style.visibility = 'hidden';
+            crosshairCanvas.style.display = "block"
             selectWeapon(); //selects weapon
             selectMagazine() //selects magazinesize
             selectBarrelMod() //selects barrelmod
             changeFov(); //updates the fov
             changeMouseSensitivity() // updates mouse sens
+            changeCountdownToShot() // updates the countodnw to the first shot
             recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
             bulletNumber = 0;
-            countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot
             player.canShoot = true;
             bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]
             
             
         } );
+        
         controls.addEventListener( 'unlock', function () {
-            blocker.style.display = 'block';
-            instructions.style.display = '';
+            blocker.style.visibility = 'visible';
+            crosshairCanvas.style.display = "none"
             player.canShoot = false;
         } );
         
@@ -177,10 +182,10 @@ let startGunRotationY;
         const wallcolor = world.wallColor; //sets wall atributes from world.js
         var geometry = new THREE.PlaneGeometry( wallwidth, wallheight ); 
         var material = new THREE.MeshBasicMaterial( {color: wallcolor, side: THREE.DoubleSide} );
-        var wallNorth = new THREE.Mesh( geometry, material );
-        var wallSouth = new THREE.Mesh( geometry, material );
-        var wallEast = new THREE.Mesh( geometry, material );
-        var wallWest = new THREE.Mesh( geometry, material );
+        wallNorth = new THREE.Mesh( geometry, material );
+        wallSouth = new THREE.Mesh( geometry, material );
+        wallEast = new THREE.Mesh( geometry, material );
+        wallWest = new THREE.Mesh( geometry, material );
         scene.add( wallNorth, wallSouth, wallEast, wallWest); //Adds walls to scene
         collidableMeshList.push(wallNorth, wallSouth, wallEast, wallWest)
 
@@ -281,19 +286,22 @@ let startGunRotationY;
             /* startGunRotationX = controls.getObject().children[ 0 ].rotation.x
             startGunRotationY =  controls.getObject().rotation.y */
             mouseDown = true;
+            shooting = true;
         }
+        
         const onMouseUp = function() {
             mouseDown = false;
+            shooting = false;
             bulletNumber = 0;
-            /* controls.getObject().children[ 0 ].rotation.x = startGunRotationX
-            controls.getObject().rotation.y =  startGunRotationY */
+            changeCountdownToShot()
+    
         };
         const reload = function() {
             bulletNumber = 0;
-            bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]
-            
-            
+            bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]    
+            changeCountdownToShot()        
         }
+
         document.addEventListener( 'keydown', onKeyDown, false );
         document.addEventListener( 'keyup', onKeyUp, false );
         window.addEventListener( "mousedown", onMouseDown, false);
@@ -302,7 +310,17 @@ let startGunRotationY;
         createPlayer();
         
     } //end of init
+    function changeCountdownToShot() {
+        countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot
+    }
 
+    function clearBullets() {
+            for(let i = 0; i < circleArray.length; i++){
+                let o = scene.getObjectByName('hit');
+                scene.remove( o );
+            }
+            circleArray = []
+    }
     function selectWeapon() {
         selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value
     }
@@ -400,9 +418,10 @@ let startGunRotationY;
                 controls.getObject().position.y = 10;
                 player.canJump = true;
             }
-
+            
             /* shooting */
             if (mouseDown && countdownToShot <= 0 && bulletsLeft > 0) {
+                
                 let shotPosition = new THREE.Vector3()
                 var cameraDirection = controls.getDirection(new THREE.Vector3(0, 0, 0)).normalize().clone();
                 var rayCaster = new THREE.Raycaster();  
@@ -410,7 +429,7 @@ let startGunRotationY;
                 //setting up for the hitpoint
                 var hitGeometry = new THREE.CircleGeometry( 0.2, 16 );
                 var hitMateral = new THREE.MeshBasicMaterial( { color: 0x0E0909 } );
-                var circle = new THREE.Mesh( hitGeometry, hitMateral );
+                circle = new THREE.Mesh( hitGeometry, hitMateral );
                 circle.material.side = THREE.DoubleSide
                 rayCaster.set( controls.getObject().position, cameraDirection );
                 var intersects = rayCaster.intersectObjects( scene.children );
@@ -422,6 +441,9 @@ let startGunRotationY;
                 }
                 circle.alive = true;
                 scene.add( circle );
+                circle.name = "hit"
+                circleArray.push(circle)
+
                 if(shotPosition.x >= world.MAP_SIZE / 2 - 1) {
                     circle.position.set(shotPosition.x - 0.1, shotPosition.y, shotPosition.z)
                     circle.rotation.y = -Math.PI / 2
@@ -440,24 +462,24 @@ let startGunRotationY;
                 }   
                
                 
-                
-                    countdownToShot = weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t
+                        countdownToShot = weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t
+
                     let recoilXMin
                     let recoilXMax
                     let recoilYMin
                     let recoilYMax
                     //controlling recoil
-                    if(selectedBarrelAttachment === "barrelExtensionLevelOne" && selectedWeapon != "flatline") {
+                    if(selectedBarrelAttachment === "barrelExtensionLevelOne" && selectedWeapon != "flatline" && selectedWeapon != "havocNoTurbo" && selectedWeapon != "havocTurbo" ) {
                         recoilXMin = (recoilPattern[bulletNumber].xMin * 0.9)
                         recoilXMax = (recoilPattern[bulletNumber].xMax * 0.9)
                         recoilYMin = (recoilPattern[bulletNumber].yMin * 0.9)
                         recoilYMax = (recoilPattern[bulletNumber].yMax * 0.9)
-                    } else if(selectedBarrelAttachment === "barrelExtensionLevelTwo" && selectedWeapon != "flatline") {
+                    } else if(selectedBarrelAttachment === "barrelExtensionLevelTwo" && selectedWeapon != "flatline" && selectedWeapon != "havocNoTurbo" && selectedWeapon != "havocTurbo" ) {
                         recoilXMin = (recoilPattern[bulletNumber].xMin * 0.85)
                         recoilXMax = (recoilPattern[bulletNumber].xMax * 0.85)
                         recoilYMin = (recoilPattern[bulletNumber].yMin * 0.85)
                         recoilYMax = (recoilPattern[bulletNumber].yMax * 0.85)
-                    } else if(selectedBarrelAttachment === "barrelExtensionLevelThree" && selectedWeapon != "flatline") {
+                    } else if(selectedBarrelAttachment === "barrelExtensionLevelThree" && selectedWeapon != "flatline" && selectedWeapon != "havocNoTurbo" && selectedWeapon != "havocTurbo" ) {
                         recoilXMin = (recoilPattern[bulletNumber].xMin * 0.8)
                         recoilXMax = (recoilPattern[bulletNumber].xMax * 0.8)
                         recoilYMin = (recoilPattern[bulletNumber].yMin * 0.8)
@@ -472,8 +494,6 @@ let startGunRotationY;
                     controls.getObject().children[ 0 ].rotation.x = controls.getObject().children[ 0 ].rotation.x + (randomNumberinRange(recoilYMin, recoilYMax)) * 0.00030
                     controls.getObject().rotation.y = controls.getObject().rotation.y + (randomNumberinRange(recoilXMin, recoilXMax)) * 0.00030
                   
-                    /* controls.getObject().children[ 0 ].rotation.x = controls.getObject().children[ 0 ].rotation.x + (recoilPattern[bulletNumber].y * 0.00030)
-                    controls.getObject().rotation.y = controls.getObject().rotation.y + (recoilPattern[bulletNumber].x * 0.00030)  */
                     
 
                     bulletNumber++;     
@@ -482,10 +502,16 @@ let startGunRotationY;
                     
                 
                 }
+                
                 timeToAnimate = time - timeToAnimate
-                if(countdownToShot > 0) countdownToShot -= (delta + timeToAnimate); ; //gives the most accurate countdown to shot. Takes into account time between frames and time during frames.
                 
-                
+                if(countdownToShot > 0) {
+                    if(shooting) {
+                        countdownToShot -= (delta + timeToAnimate); ; //gives the most accurate countdown to shot. Takes into account time between frames and time during frames.
+                    } else {
+                        countdownToShot = countdownToShot
+                    }
+                }
             prevTime = time;
             
             

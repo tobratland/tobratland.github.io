@@ -7,7 +7,8 @@ import { settings } from "../settings.js";
  */
 let yawObject;
 let pitchObject;
-
+let reverseMouseUpDown =  document.getElementById("reverseMouseUpDownCheckbox") 
+let reverseMouseLeftRight =  document.getElementById("reverseMouseLeftRightCheckbox")
 THREE.PointerLockControls = function ( camera, domElement ) {
 
 	var scope = this;
@@ -33,11 +34,21 @@ THREE.PointerLockControls = function ( camera, domElement ) {
 
 		var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
 		var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+		if(reverseMouseLeftRight.checked) { //logic for reversed/non-reversed mouse
+			yawObject.rotation.y += movementX * (settings.defaultMouseSensitivity * settings.sens);
+		} else {
+			yawObject.rotation.y -= movementX * (settings.defaultMouseSensitivity * settings.sens);
+		}
+		if(reverseMouseUpDown.checked) {
+			pitchObject.rotation.x += movementY * (settings.defaultMouseSensitivity * settings.sens);
+			pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
+		} else {
+			pitchObject.rotation.x -= movementY * (settings.defaultMouseSensitivity * settings.sens);
+			pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
+		}
+		
 
-		yawObject.rotation.y -= movementX * (settings.defaultMouseSensitivity * settings.sens);
-		pitchObject.rotation.x -= movementY * (settings.defaultMouseSensitivity * settings.sens);
-
-		pitchObject.rotation.x = Math.max( - PI_2, Math.min( PI_2, pitchObject.rotation.x ) );
+		
 
 	}
 

@@ -1,0 +1,23 @@
+*{
+    overflow-x: hidden;
+    background-color: rgb(26, 26, 29, 1);
+    color: grey;
+}
+a {
+    color: rgb(111, 34, 51);
+}
+h1 {
+    color: rgb(111, 34, 51);
+    text-align: center; 
+}
+
+h2 {
+    color: white;
+}
+h3 {
+    text-align: center;
+    color: rgb(111, 34, 51);
+}
+h4 {
+    color: lightgray;
+}

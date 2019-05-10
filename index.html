@@ -1,113 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>SprayNPray - Recoil Trainer</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<link rel="stylesheet" type="text/css" href="style.css">
-	</head>
-	<body>
-		
-		<div id="player-xhair" class="player-hud" style="width: 30px; height: 30px; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 2; position: absolute;">
-			<canvas id="xhair" style="width: 30; height: 30; z-index: 2; border: 0px;"></canvas>
-		</div>
-		<div id="blocker">
-				<header>
-						<h1>Spray N Pray</h1>
-						<nav>
-							<ul>
-                                <li><a href = "mailto: cpttheinternet@gmail.com">Contact me</a></li>
-                                <li><a href="http://www.paypal.me/captaintheinternet" target="_blank">Buy me a beer</a></li>
-							</ul>
-						</nav>
-					</header>
-			<div id="settingsPage">
-				
-				<br />
-				<br />
-				<div class="FOVslidecontainer">
-					<p>FOV</p>
-					<input type="range" id="myRange" min="1" max="180" value="75" class="slider" oninput="fovValue.value=myRange.value">
-					<br>
-					<input type="number" id="fovValue" min="1" max="180" value="75" oninput="myRange.value=fovValue.value"> 
-				</div>
-				<div class="FOVslidecontainer">
-					<p>Mouse sensitivity</p>
-					<input type="range" id="MouseSensRange" min="0.2" max="20" value="3.5" class="slider" oninput="MouseSensNumber.value=MouseSensRange.value">
-					<br>
-					<input type="number" id="MouseSensNumber" min="0.2" max="20" value="3.5" oninput="MouseSensRange.value=MouseSensNumber.value"> 
-				</div>
-				<br />
-				<p id="Instructions">Spray training for Apex Legends(not suitable for people who are prone to seiziures)</p>
-				<p id="Instructions">Use W, A, S, D to move, space to jump</p>
-				<p id="Instructions">Use mouse to look around and left mouse button to fire </p>
-				<p id="Instructions">Extended magazine for light ammo weapons is not yet available</p>
-				<p id="Instructions">Tab or escape to get back to menu while playing</p>
-				<br />
-				<br />
-				<br />
-				<br />
-				<br />
-				<br />
-				<br />
-                <br />
-                
-                <button id="playButton">Play game</button>
-                <br/>
-                <br/>
-				<div>
-					<select id="weaponSelector" >
-						<optgroup label = "Light Machine Gun">
-							<option value="spitfire">Spitfire</option>
-						</optgroup>
-						<optgroup label = "Submachine Gun">
-							<option value="r99">R99</option>
-							<option value="alternator">Alternator</option>
-						</optgroup>
-						<optgroup label = "Assault Rifle">
-							<option value="r301">R301</option>
-							<option value="flatline">Flatline</option>
-						</optgroup>
-						<optgroup label = "Pistols">
-							<option value="re45">RE-45</option>
-						</optgroup>
-					</select>
-					<select id="magazineSelector" >
-						<option value="noExtension">No extended magazine</option>
-						<option value="extensionLevelOne">extended magazine level 1</option>
-						<option value="extensionLevelTwo">extended magazine level 2</option>
-						<option value="extensionLevelThree">extended magazine level 3</option>
-					</select>
-					<select id="barrelAttachment" >
-						<option value="noBarrelExtension">No Barrel Extension</option>
-						<option value="barrelExtensionLevelOne">Barrel extension level 1</option>
-						<option value="barrelExtensionLevelTwo">Barrel extension level 2</option>
-						<option value="barrelExtensionLevelThree">Barrel extension level 3</option>
-					</select>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>SprayNPray</title>
+</head>
+<body>
+    <div id="player-xhair" class="player-hud" style="width: 30px; height: 30px; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 2; position: absolute;">
+        <canvas id="xhair" style="width: 30; height: 30; z-index: 2; border: 0px;"></canvas>
+    </div>
+    <div id="blocker" class="grid-container">
+        <div class="world">
+            <h2>Reserved for more settings and stuff</h2>
+            
+
+            
+        </div>
+        <div class="instructions">
+            <h3>Instructions</h3>
+            <p>Recoil training for Apex Legends</p>
+            <p id="warning">Not suitable for people who are prone to seiziures</p>
+            <p>Use W, A, S, D to move, space to jump</p>
+            <p>Use mouse to look around and left mouse button to fire </p>
+            <p>Extended magazine for light ammo weapons is not yet available</p>
+            <p>Tab or escape to get back to menu while playing</p>
+        </div>
+        <div class="beer">
+            <a href="http://www.paypal.me/captaintheinternet" target="_blank">Buy me a beer</a>
+        </div>
+        <div class="logo">
+                <h1>Spray N Pray</h1>
+            </div>
+        <div class="about">
+            <a href="/about.html">About</a>
+        </div>
+        <div class="clear">
+            <button id="clearBulletsButton">Remove hits</button>
+        </div>
+        <div class="play">
+            <button id="playButton">Play game</button>
+        </div>
+        <div class="contact">
+            <h2>Contact me</h2>
+                <div class="contactLinks">
+                    <a href="https://github.com/tobratland" target="_blank">
+                        <img src="./logos/GitHub logo.png" alt="My Github page" style="width:72px;height:72px;border:0;">
+                    </a>
+                    <a href="mailto: cpttheinternet@gmail.com" target="_blank">
+                        <img src="./logos/email logo.png" alt="Email me" style="width:72px;height:72px;border:0;">
+                    </a>
+                    <a href="https://www.reddit.com/user/Hunkitunk/" target="_blank">
+                        <img src="./logos/reddit logo.png" alt="My Reddit page" style="width:72px;height:72px;border:0;">
+                    </a>
                 </div>
-                <br/>
-                <br/>
-                <br/>
-                <br/>
-                <br/>
-                <br/>
-                <p id="shoutoutToModelmaker">Made with <a href="https://threejs.org/">Three.js</a></p>
-                <p id="shoutoutToModelmaker">Got a lot of inspiration from <a href="http://spray.training/">spray.training</a></p>
-                
-                <p id="shoutoutToModelmaker">The model for the weapon is courtesy of <a href="http://www.kenney.nl">www.kenney.nl</a>, give him a visit!</p>
-                <p id="shoutoutToModelmaker">The <a href="https://www.reddit.com/r/apexlegends/comments/ayv40b/comprehensive_weapons_spreadsheet_including/">spreadsheet</a> Mr_Clovis made was a great help</p>
-			</div>
-			
-		</div>
-	
-		<script src="./js/library/three.js" type="module"></script>
-		<script src="./js/world.js" type="module"></script>
-		<script src="./js/player.js" type="module"></script>
-		<script src="./js/library/PointerLockControls.js" type="module"></script>
-		<script src="./js/library/MTLLoader.js" type="module" ></script>
-		<script src="./js/library/OBJLoader.js" type="module" ></script>
-		<script src="./js/settings.js" type="module" ></script>
-		<script src="./js/weapons.js" type="module" ></script>
-		<script src="./js/main.js" type="module" ></script>
-	</body>
-</html>	
+        </div>
+        <div class="weapon">
+            <h3>Weapon and attachments</h3>
+                <select id="weaponSelector" >
+                    <optgroup label = "Light Machine Gun">
+                        <option value="spitfire">Spitfire</option>
+                        <option value="devotionNoTurbo">Devotion, no turbocharger</option>
+                        <option value="devotionTurbo">Devotion, with turbocharger</option>
+                        
+                    </optgroup>
+                    <optgroup label = "Submachine Gun">
+                        <option value="r99">R99</option>
+                        <option value="alternator">Alternator</option>
+                    </optgroup>
+                    <optgroup label = "Assault Rifle">
+                        <option value="r301">R301</option>
+                        <option value="flatline">Flatline</option>
+                        <option value="havocNoTurbo">Havoc, no Turbocharger</option>
+                        <option value="havocTurbo">Havoc, with turbocharger</option>
+                    </optgroup>
+                    <optgroup label = "Pistols">
+                        <option value="re45">RE-45</option>
+                    </optgroup>
+                </select>
+                <select id="magazineSelector" >
+                    <option value="noExtension">No extended magazine</option>
+                    <option value="extensionLevelOne">extended magazine level 1</option>
+                    <option value="extensionLevelTwo">extended magazine level 2</option>
+                    <option value="extensionLevelThree">extended magazine level 3</option>
+                </select>
+                <select id="barrelAttachment" >
+                    <option value="noBarrelExtension">No Barrel Extension</option>
+                    <option value="barrelExtensionLevelOne">Barrel extension level 1</option>
+                    <option value="barrelExtensionLevelTwo">Barrel extension level 2</option>
+                    <option value="barrelExtensionLevelThree">Barrel extension level 3</option>
+                </select>
+        </div>
+        <div class="settings">
+            <div class="FOVslidecontainer">
+                <p>FOV</p>
+                <input type="range" id="myRange" min="1" max="180" value="75" class="slider" oninput="fovValue.value=myRange.value">
+                <br>
+                <input type="number" id="fovValue" min="1" max="180" value="75" oninput="myRange.value=fovValue.value"> 
+            </div>
+            <div class="FOVslidecontainer">
+                <p>Mouse sensitivity</p>
+                <input type="range" id="MouseSensRange" min="0.2" max="20" value="3.5" class="slider" oninput="MouseSensNumber.value=MouseSensRange.value">
+                <br>
+                <input type="number" id="MouseSensNumber" min="0.2" max="20" value="3.5" oninput="MouseSensRange.value=MouseSensNumber.value"> 
+            </div>
+            <br>
+            <input type="checkbox" id="reverseMouseUpDownCheckbox"> reverse mouse up/down 
+            <br>
+            <input type="checkbox" id="reverseMouseLeftRightCheckbox"> reverse mouse left/right
+        </div>
+    </div>
+    <script src="./js/library/three.js" type="module"></script>
+    <script src="./js/world.js" type="module"></script>
+    <script src="./js/player.js" type="module"></script>
+    <script src="./js/library/PointerLockControls.js" type="module"></script>
+    <script src="./js/library/MTLLoader.js" type="module" ></script>
+    <script src="./js/library/OBJLoader.js" type="module" ></script>
+    <script src="./js/settings.js" type="module" ></script>
+    <script src="./js/weapons.js" type="module" ></script>
+    <script src="./js/main.js" type="module" ></script>
+</body>
+</html>
+
