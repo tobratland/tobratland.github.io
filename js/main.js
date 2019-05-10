@@ -293,12 +293,13 @@ let circle;
             mouseDown = false;
             shooting = false;
             bulletNumber = 0;
-            /* controls.getObject().children[ 0 ].rotation.x = startGunRotationX
-            controls.getObject().rotation.y =  startGunRotationY */
+            changeCountdownToShot()
+    
         };
         const reload = function() {
             bulletNumber = 0;
-            bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]            
+            bulletsLeft = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine]    
+            changeCountdownToShot()        
         }
 
         document.addEventListener( 'keydown', onKeyDown, false );
@@ -468,17 +469,17 @@ let circle;
                     let recoilYMin
                     let recoilYMax
                     //controlling recoil
-                    if(selectedBarrelAttachment === "barrelExtensionLevelOne" && selectedWeapon != "flatline") {
+                    if(selectedBarrelAttachment === "barrelExtensionLevelOne" && selectedWeapon != "flatline" && selectedWeapon != "havocNoTurbo" && selectedWeapon != "havocTurbo" ) {
                         recoilXMin = (recoilPattern[bulletNumber].xMin * 0.9)
                         recoilXMax = (recoilPattern[bulletNumber].xMax * 0.9)
                         recoilYMin = (recoilPattern[bulletNumber].yMin * 0.9)
                         recoilYMax = (recoilPattern[bulletNumber].yMax * 0.9)
-                    } else if(selectedBarrelAttachment === "barrelExtensionLevelTwo" && selectedWeapon != "flatline") {
+                    } else if(selectedBarrelAttachment === "barrelExtensionLevelTwo" && selectedWeapon != "flatline" && selectedWeapon != "havocNoTurbo" && selectedWeapon != "havocTurbo" ) {
                         recoilXMin = (recoilPattern[bulletNumber].xMin * 0.85)
                         recoilXMax = (recoilPattern[bulletNumber].xMax * 0.85)
                         recoilYMin = (recoilPattern[bulletNumber].yMin * 0.85)
                         recoilYMax = (recoilPattern[bulletNumber].yMax * 0.85)
-                    } else if(selectedBarrelAttachment === "barrelExtensionLevelThree" && selectedWeapon != "flatline") {
+                    } else if(selectedBarrelAttachment === "barrelExtensionLevelThree" && selectedWeapon != "flatline" && selectedWeapon != "havocNoTurbo" && selectedWeapon != "havocTurbo" ) {
                         recoilXMin = (recoilPattern[bulletNumber].xMin * 0.8)
                         recoilXMax = (recoilPattern[bulletNumber].xMax * 0.8)
                         recoilYMin = (recoilPattern[bulletNumber].yMin * 0.8)
