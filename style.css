@@ -1,112 +1,220 @@
-html, body {
-  width: 100%;
-  height: 100%;
-}
-body {
-  background-color: #ffffff;
-  margin: 0;
-  overflow: hidden;
-  font-family: arial;
+* {
+  padding: 0px;
+  margin: 0px;
+  overflow: hidden; 
 }
 #blocker {
   position: absolute;
   text-align: center;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgb(26, 26, 29, 0.9);
+  color: white;
 }
-#settingsPage {
-  width: 100%;
-  height: 100%;
-  display: inline-block;
+#warning {
+  color: lightcoral;
+}
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-areas: 
+      "beer beer logo about about" 
+      "world world play weapon weapon" 
+      "world world clear weapon weapon" 
+      "contact contact settings instructions instructions" 
+      "contact contact settings instructions instructions"
+      "footer footer footer footer footer";
+  }
+  
+  .world { 
+    grid-area: world; 
+    justify-self: center;
+    align-self: center;  
+    
+  }
+  .world h3{ 
+    text-align: center;
+  }
+  
+  .instructions { 
+    grid-area: instructions; 
+  }
+  .logo {
+    grid-area: logo; 
+    display: flex;
+    background-color: black;
+    color: rgb(111, 34, 51);
+    align-items: center;
+    justify-content: center;
+    font-size:1.5vw
+  }
+  .beer { 
+    grid-area: beer; 
+    display: flex;
+    background-color: black;
+    color: white;
+    align-items: center;
+    justify-content: center;
+    font-size:1.5vw
+  }
+  .about {
+    grid-area: about;
+    display: flex;
+    background-color: black;
+    color: white;
+    align-items: center;
+    justify-content: center;
+    font-size:1.5vw
+  }
+  .clear { 
+    grid-area: clear; 
+    justify-self: center;
+    align-self: center; 
+    color: black;
+  }
+  
+  .play { 
+    grid-area: play;
+    justify-self: center;
+    align-self: center; 
+  }
+  
+  .contact { 
+    grid-area: contact;
+    justify-self: center;
+    align-self: center; 
+    text-align: center;
+    }
+
+
+  .weapon { 
+    grid-area: weapon;
+    justify-self: center;
+    align-self: center;  
+    text-align: center;
+    font-size:1.2vw;
+    
+  }
+  .weapon h3 {
+    color: white;  
+  }
+
+  .settings { 
+    grid-area: settings; 
+    justify-self: center;
+    align-self: center; 
+  }
+
+
+#playButton {
+  background-color: black;
+  -moz-border-radius:28px;
+  -webkit-border-radius:28px;
+  border-radius:28px;
+  border:1px solid #000300;
+  display:inline-block;
+  cursor:pointer;
+  color: white;
+  font-family:Arial;
+  font-size:22px;
+  padding:16px 31px;
+  text-decoration:none;
+  text-shadow: none;
+}
+#playButton:hover {
+  background-color: #1a1a1d;
+}
+#playButton:active {
+    position:relative;
+    top:1px;
 }
 
+#clearBulletsButton {
+    background-color: black;
+    -moz-border-radius:28px;
+    -webkit-border-radius:28px;
+    border-radius:28px;
+    border:1px solid #000300;
+    display:inline-block;
+    cursor:pointer;
+    color: white;
+    font-family:Arial;
+    font-size:22px;
+    padding:16px 31px;
+    text-decoration:none;
+    text-shadow: none;
+    }
+#clearBulletsButton:hover {
+    background-color: #1a1a1d;
+}
+#clearBulletsButton:active {
+    position:relative;
+    top:1px;
+}
 
 /* The slider itself */
 .slider {
-  -webkit-appearance: none;  /* Override default CSS styles */
-  appearance: none;
-  height: 25px; /* Specified height */
-  background: #d3d3d3; /* Grey background */
-  outline: none; /* Remove outline */
-  opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
-  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
-  transition: opacity .2s;
-}
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    height: 25px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+  }
+  
+  /* Mouse-over effects */
+  .slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+  }
+  
+  /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */ 
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+  }
+  
+  .slider::-moz-range-thumb {
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+  }
 
-/* Mouse-over effects */
-.slider:hover {
-  opacity: 1; /* Fully shown on mouse-over */
-}
-
-/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */ 
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none; /* Override default look */
-  appearance: none;
-  width: 25px; /* Set a specific slider handle width */
-  height: 25px; /* Slider handle height */
-  background: #4CAF50; /* Green background */
-  cursor: pointer; /* Cursor on hover */
-}
-
-.slider::-moz-range-thumb {
-  width: 25px; /* Set a specific slider handle width */
-  height: 25px; /* Slider handle height */
-  background: #4CAF50; /* Green background */
-  cursor: pointer; /* Cursor on hover */
-}
-
-header {
-  color: white;
-  background-color: black;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  display: flex;
-  align-items: center;
-}
-header * {
-display: inline-flex;
-}
-header li {
-margin: 20px;
-}
-header a:link {
-color: white;
-}
-/* A link that has been visited */
-header a:visited {
-color: white;
-}
-/* A link that is hovered on */
-header a:hover {
-color: grey;
-}
-/* A link that is selected */
-header a:active {
-color: white;
-}
-#playButton {
-background-color:#cf2525;
--moz-border-radius:28px;
--webkit-border-radius:28px;
-border-radius:28px;
-border:1px solid #000300;
-display:inline-block;
-cursor:pointer;
-color:#ffffff;
-font-family:Arial;
-font-size:22px;
-padding:16px 31px;
-text-decoration:none;
-text-shadow:0px 1px 0px #2f6627;
-}
-#playButton:hover {
-background-color:#ff0000;
-}
-#playButton:active {
-position:relative;
-top:1px;
-}
+  
+  .beer a:link {
+    color: white;
+    }
+    /* A link that has been visited */
+  .beer a:visited {
+    color: white;
+  }
+    /* A link that is hovered on */
+  .beer a:hover {
+    color: grey;
+  }
+    /* A link that is selected */
+  .beer a:active {
+    color: white;
+  }
+  .about a:link {
+    color: white;
+    }
+    /* A link that has been visited */
+  .about a:visited {
+    color: white;
+  }
+    /* A link that is hovered on */
+  .about a:hover {
+    color: grey;
+  }
+    /* A link that is selected */
+  .about a:active {
+    color: white;
+  }

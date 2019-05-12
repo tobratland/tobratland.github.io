@@ -6,6 +6,8 @@ Allowing players to practise recoil and timing of weapons directly in browser, a
 
 
 ## Production History
+### 1.2.0 - 10.05.2019
+Added devotion and havoc with/without turbocharger. Added option to clear bullets. Styled front page better. Added about page.
 ### 0.2.1 - 22.04.2019
 Changed the way bullets work completely from beeing meshes fired to obstacles
 Added mouse sensitivity slider and the code for controlling it.
