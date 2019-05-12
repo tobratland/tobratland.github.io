@@ -34,7 +34,7 @@ Not a complete list, just updated as i remember the things i want to add.
 
 ### Menu Screen
 - [x] Add picker for mouse sensitivity
-- [ ] Add styling to make it look better
+- [x] Add styling to make it look better
 
 ### Physics
 - [ ] Add crouching
@@ -43,20 +43,21 @@ Not a complete list, just updated as i remember the things i want to add.
 
 ### Weapons
 - [ ] Assaultrifles 
-      - [ ] Flatline 
-      - [ ] Havoc 
-      - [ ] Havoc (Single)
+      - [x] Flatline 
+      - [x] Havoc 
+      - [x] Havoc (Turbocharged)
       - [ ] Hemlok (Burst)
       - [ ] Hemlok (Single)
-      - [ ] R-301
+      - [x] R-301
 
 - [ ] LMGs
-      - [ ] Devotion 
-      - [ ] Spitfire 
+      - [x] Devotion 
+      - [x] Devotion(Turbocharged)
+      - [x] Spitfire 
 
 - [ ] Pistols
       - [ ] P2020
-      - [ ] RE-45 Auto
+      - [x] RE-45 Auto
       - [ ] Wingman
 
 - [ ] Shotguns
@@ -66,10 +67,10 @@ Not a complete list, just updated as i remember the things i want to add.
       - [ ] Peacekeeper
 
 - [ ] SMGs
-      - [ ] Alternator
+      - [x] Alternator
       - [ ] Prowler (Auto)
       - [ ] Prowler (burst)
-      - [ ] R-99
+      - [x] R-99
 
 - [ ] Sniper Rifles
       - [ ] G7 Scout
