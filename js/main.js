@@ -34,13 +34,25 @@ let countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot
 let shooting = false;
 let circleArray = [];
 let circle;
+//Cookies
+let consentedToCookies
+let cookieConsentButton = document.getElementById("acceptCookies")
+let cookieRejectionButton = document.getElementById("rejectCookies")
+let privacyBlocker = document.getElementById("privacy") 
+
+if(localStorage.getItem("consentedToCookies") != null) {
+    consentedToCookies = localStorage.getItem("consentedToCookies")
+    console.log(consentedToCookies)
+    
+    //privacyBlocker.style.visibility = "hidden"
+}
+if(consentedToCookies == "true") {
+    privacyBlocker.style.visibility = "hidden"
+} else {
+    privacyBlocker.style.visibility = "visible"
+}
 
 
-
-
-      //calculate objects intersecting the picking ray
-      
-      
 
 //overlay canvas for reticle
     const crosshairCanvas = document.getElementById("xhair")
@@ -94,7 +106,18 @@ let circle;
             RESOURCES_LOADED = true;
             onResoucesLoaded();
         }
-        
+        // add cookie consent
+        cookieConsentButton.addEventListener("click", function() {
+            privacyBlocker.style.visibility = "hidden"
+            consentedToCookies = true;
+            localStorage.setItem('consentedToCookies', true);
+        })
+        cookieRejectionButton.addEventListener("click", function() {
+            privacyBlocker.style.visibility = "hidden"
+            consentedToCookies = false;
+            localStorage.setItem('consentedToCookies', false);
+        })
+
         //add eventlisteners to the instructions to make click lock controls and adds eventlisteners to the controls to lock/unlock pointerlock
         instructionButton.addEventListener( 'click', function () {
             controls.lock();

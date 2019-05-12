@@ -36,6 +36,17 @@
   .world h3{ 
     text-align: center;
   }
+  #privacy {
+    display: block;
+    z-index: 10;
+    background-color: #000300;
+    grid-area: footer;  
+    font-size: 20px;
+    padding: 15px 14px;
+  }
+  #privacy a {
+    color: lightgray;
+  }
   
   .instructions { 
     grid-area: instructions; 
@@ -129,7 +140,51 @@
     position:relative;
     top:1px;
 }
-
+#acceptCookies {
+  background-color: Green;
+  -moz-border-radius:10px;
+  -webkit-border-radius:10px;
+  border-radius:10px;
+  border:1px solid grey;
+  display:inline-block;
+  cursor:pointer;
+  color: white;
+  font-family:Arial;
+  font-size:12px;
+  padding:10px 15px;
+  text-decoration:none;
+  text-shadow: none;
+}
+#rejectCookies {
+  background-color: red;
+  -moz-border-radius:10px;
+  -webkit-border-radius:10px;
+  border-radius:10px;
+  border:1px solid grey;
+  display:inline-block;
+  cursor:pointer;
+  color: white;
+  font-family:Arial;
+  font-size:12px;
+  padding:10px 15px;
+  text-decoration:none;
+  text-shadow: none;
+}
+#learnAboutCookies {
+  background-color: Grey;
+  -moz-border-radius:10px;
+  -webkit-border-radius:10px;
+  border-radius:10px;
+  border:1px solid grey;
+  display:inline-block;
+  cursor:pointer;
+  color: white;
+  font-family:Arial;
+  font-size:12px;
+  padding:10px 15px;
+  text-decoration:none;
+  text-shadow: none;
+}
 #clearBulletsButton {
     background-color: black;
     -moz-border-radius:28px;
