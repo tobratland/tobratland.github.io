@@ -17,6 +17,7 @@ let RESOURCES_LOADED = false;
 let velocity = new THREE.Vector3();
 const USE_WIREFRAME = false;
 let playerMesh;
+let hud = document.getElementById("hud");
 let meshes = {};
 let weaponSelector = document.getElementById("weaponSelector");
 let magazineSelector = document.getElementById("magazineSelector");
@@ -37,12 +38,20 @@ let countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot;
 let shooting = false;
 let circleArray = [];
 let circle;
+let mute = document.getElementById("mute");
+let muted = false;
 //Cookies
 let consentedToCookies;
 let cookieConsentButton = document.getElementById("acceptCookies");
 let cookieRejectionButton = document.getElementById("rejectCookies");
 let privacyBlocker = document.getElementById("privacy");
-
+let shootingAudio = new Howl({
+  src: [
+    "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".mp3",
+    "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".ogg"
+  ]
+});
+let playingShootingAudio = false;
 if (localStorage.getItem("consentedToCookies") != null) {
   consentedToCookies = localStorage.getItem("consentedToCookies");
   console.log(consentedToCookies);
@@ -62,6 +71,7 @@ crosshairCtx.strokeStyle = "#39ff14";
 crosshairCtx.fillStyle = "#39ff14";
 crosshairCtx.lineWidth = 2;
 crosshairCanvas.style.display = "none";
+hud.style.display = "none"
 crosshairCtx.clearRect(0, 0, 30, 30);
 crosshairCtx.fillRect(13, 13, 4, 4);
 
@@ -139,12 +149,15 @@ function init() {
   controls.addEventListener("lock", function() {
     blocker.style.visibility = "hidden";
     crosshairCanvas.style.display = "block";
+    hud.style.display = "block";
     selectWeapon(); //selects weapon
     selectMagazine(); //selects magazinesize
     selectBarrelMod(); //selects barrelmod
     changeFov(); //updates the fov
     changeMouseSensitivity(); // updates mouse sens
-    changeCountdownToShot(); // updates the countodnw to the first shot
+    changeCountdownToShot(); // updates the countdown to the first shot
+    updateMute(); //checks if muted
+    updateAudio(); //updates the audio to fit the weapon
     recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
     bulletNumber = 0;
     player.canShoot = true;
@@ -155,6 +168,7 @@ function init() {
   controls.addEventListener("unlock", function() {
     blocker.style.visibility = "visible";
     crosshairCanvas.style.display = "none";
+    hud.style.display = "none";
     player.canShoot = false;
   });
 
@@ -312,11 +326,14 @@ function init() {
             startGunRotationY =  controls.getObject().rotation.y */
     mouseDown = true;
     shooting = true;
+   
   };
 
   const onMouseUp = function() {
     mouseDown = false;
     shooting = false;
+    shootingAudio.stop();
+    playingShootingAudio = false;
     bulletNumber = 0;
     changeCountdownToShot();
   };
@@ -357,15 +374,32 @@ function selectMagazine() {
   selectedMagazine =
     magazineSelector.options[magazineSelector.selectedIndex].value;
 }
+
 function changeFov() {
   camera.fov = document.getElementById("fovValue").value;
   camera.updateProjectionMatrix();
+}
+function updateAudio() {
+  shootingAudio = new Howl({
+    src: [
+      "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".mp3",
+      "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".ogg"
+    ]
+  })
 }
 function changeMouseSensitivity() {
   settings.sens = document.getElementById("MouseSensNumber").value;
   camera.updateProjectionMatrix();
 }
-
+function updateMute() {
+  mute = document.getElementById("mute").checked;
+  console.log(mute)
+  if(mute) {
+    muted = true;
+  } else {
+    muted = false;
+  }
+}
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -433,14 +467,27 @@ function animate() {
       controls.getObject().translateZ(velocity.z * delta);
     }
 
+    //for updating bullets left in hud 
+    document.getElementById("bulletsLeft").innerHTML = bulletsLeft; 
+    document.getElementById("totalbullets").innerHTML = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
     //can the player jump and sets the player on ground while not jumping.
     if (controls.getObject().position.y < 10) {
       velocity.y = 0;
       controls.getObject().position.y = 10;
       player.canJump = true;
     }
-
+    if(bulletsLeft <= 0){
+      shootingAudio.stop();
+      playingShootingAudio = false;
+    }
     /* shooting */
+    if(mouseDown && !playingShootingAudio && bulletsLeft > 0){
+      if(!muted) {
+      shootingAudio.play();
+      playingShootingAudio = true;
+      }
+    }
+    
     if (mouseDown && countdownToShot <= 0 && bulletsLeft > 0) {
       let shotPosition = new THREE.Vector3();
       var cameraDirection = controls
@@ -448,7 +495,8 @@ function animate() {
         .normalize()
         .clone();
       var rayCaster = new THREE.Raycaster();
-
+      
+      
       //setting up for the hitpoint
       var hitGeometry = new THREE.CircleGeometry(0.2, 16);
       var hitMateral = new THREE.MeshBasicMaterial({ color: 0x0e0909 });
@@ -507,7 +555,6 @@ function animate() {
 
       countdownToShot =
         weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t;
-
       let recoilXMin;
       let recoilXMax;
       let recoilYMin;

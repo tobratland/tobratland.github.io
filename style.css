@@ -273,3 +273,11 @@
   .about a:active {
     color: white;
   }
+
+  .hud {
+      border: 1px solid black;
+      overflow: hidden;
+      white-space: nowrap;
+      display: inline;
+      font-weight: bold;
+  }

@@ -1,8 +1,11 @@
+
+
 export const weapons = {
     apexLegends: {
         r99: {
             name: "r99",
             audio: {
+                shoot: "r99ShootNoMag"
             },
             timeToFirstShot: 0,
             recoilPattern: [
@@ -157,6 +160,7 @@ export const weapons = {
         r301: {
             name: "r301",
             audio: {
+                shoot: "r301ShootNoMag"
             },
             timeToFirstShot: 0,
             recoilPattern: [
@@ -311,6 +315,7 @@ export const weapons = {
         re45: {
             name: "re-45",
             audio: {
+                shoot: "re45ShootNoMag"
             },
             timeToFirstShot: 0,
             recoilPattern: [
@@ -448,6 +453,7 @@ export const weapons = {
             alternator: {
                 name: "Alternator",
                 audio: {
+                    shoot: "alternatorShootNoMag"
                 },
                 timeToFirstShot: 0,
                 recoilPattern: [
@@ -456,7 +462,7 @@ export const weapons = {
                         yMax: 84,
                         xMin: -1,
                         yMin: 41,
-                        t: 0.076923077,
+                        t: 0.1,
                     },
                     {
                         xMax: -14,
@@ -565,10 +571,10 @@ export const weapons = {
                     },
                     ],
                     magazineSize: {
-                        noExtension: 15,
-                        extensionLevelOne: 15, //18 when i get the data
-                        extensionLevelTwo: 15, // 21 when i get the data
-                        extensionLevelThree: 15 // 24 when i get the data
+                        noExtension: 16,
+                        extensionLevelOne: 16, //18 when i get the data
+                        extensionLevelTwo: 16, // 21 when i get the data
+                        extensionLevelThree: 16 // 24 when i get the data
                     },
                     roundsPerMinute: 600,
                     reloadTime: {
@@ -585,6 +591,7 @@ export const weapons = {
                 flatline: {
                     name: "Flatline",
                     audio: {
+                        shoot: "flatlineShootExtMag"
                     },
                     timeToFirstShot: 0,
                     recoilPattern: [
@@ -822,6 +829,7 @@ export const weapons = {
                     spitfire: {
                         name: "Spitfire",
                         audio: {
+                            shoot: "spitfireShootExtMag"
                         },
                         timeToFirstShot: 0,
                         recoilPattern: [
@@ -1233,6 +1241,7 @@ export const weapons = {
                         devotionNoTurbo: {
                             name: "Devotion No turbocharger",
                             audio: {
+                                shoot: "devotionShootNoTurbo"
                             },
                             timeToFirstShot: 0,
                             recoilPattern: [
@@ -1570,6 +1579,7 @@ export const weapons = {
                         devotionTurbo: {
                             name: "Devotion with Turbocharger",
                             audio: {
+                                shoot: "devotionShootTurbo"
                             },
                             timeToFirstShot: 0,
                             recoilPattern: [
@@ -1904,6 +1914,7 @@ export const weapons = {
                         havocNoTurbo: {
                             name: "Havoc no turbocharger",
                             audio: {
+                                shoot: "havocShootNoTurbo"
                             },
                             timeToFirstShot: 0.5,
                             recoilPattern: [
@@ -2155,6 +2166,7 @@ export const weapons = {
                         havocTurbo: {
                             name: "Havoc with Turbocharger",
                             audio: {
+                                shoot: "havocShootTurbo"
                             },
                             timeToFirstShot: 0,
                             recoilPattern: [
