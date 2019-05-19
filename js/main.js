@@ -75,7 +75,7 @@ hud.style.display = "none"
 crosshairCtx.clearRect(0, 0, 30, 30);
 crosshairCtx.fillRect(13, 13, 4, 4);
 
-var raycaster = new THREE.Raycaster();
+
 var rayDirection = new THREE.Vector3(0, 0, -1);
 var rayRotation = new THREE.Euler(0, 0, 0, "YXZ");
 
@@ -422,6 +422,125 @@ function randomNumberinRange(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function shoot() {
+  console.log(shooting)
+  let shotPosition = new THREE.Vector3();
+  const cameraDirection = controls
+    .getDirection(new THREE.Vector3(0, 0, 0))
+    .normalize()
+    .clone();
+  let rayCaster = new THREE.Raycaster();
+  let hitGeometry = new THREE.CircleGeometry(0.2, 16);
+  let hitMateral = new THREE.MeshBasicMaterial({ color: 0x0e0909 });
+  circle = new THREE.Mesh(hitGeometry, hitMateral);
+  circle.material.side = THREE.DoubleSide;
+  rayCaster.set(controls.getObject().position, cameraDirection);
+  let intersects = rayCaster.intersectObjects(scene.children);
+
+  for (
+    var intersectIndex = 0;
+    intersectIndex < intersects.length;
+    intersectIndex++
+  ) {
+    shotPosition = intersects[intersectIndex].point;
+  }
+  circle.alive = true;
+  scene.add(circle);
+  circle.name = "hit";
+  circleArray.push(circle);
+
+  if (shotPosition.x >= world.MAP_SIZE / 2 - 1) {
+    circle.position.set(
+      shotPosition.x - 0.1,
+      shotPosition.y,
+      shotPosition.z
+    );
+    circle.rotation.y = -Math.PI / 2;
+  } else if (shotPosition.x <= -(world.MAP_SIZE / 2 - 1)) {
+    circle.position.set(
+      shotPosition.x + 0.1,
+      shotPosition.y,
+      shotPosition.z
+    );
+    circle.rotation.y = -Math.PI / 2;
+  } else if (shotPosition.z >= world.MAP_SIZE / 2 - 1) {
+    circle.position.set(
+      shotPosition.x,
+      shotPosition.y,
+      shotPosition.z - 0.1
+    );
+  } else if (shotPosition.z <= -(world.MAP_SIZE / 2 - 1)) {
+    circle.position.set(
+      shotPosition.x,
+      shotPosition.y,
+      shotPosition.z + 0.1
+    );
+  } else if (
+    (shotPosition.y <= 6 && shotPosition.x <= world.MAP_SIZE / 2 - 1) ||
+    (shotPosition.y <= 6 && shotPosition.x >= -(world.MAP_SIZE / 2 - 1)) ||
+    (shotPosition.y <= 6 && shotPosition.z <= world.MAP_SIZE / 2 - 1) ||
+    (shotPosition.y <= 6 && shotPosition.z >= -(world.MAP_SIZE / 2 - 1))
+  ) {
+    circle.position.set(shotPosition.x, 0.1, shotPosition.z);
+    circle.rotation.x = -Math.PI / 2;
+  }
+
+  countdownToShot =
+    weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t;
+  let recoilXMin;
+  let recoilXMax;
+  let recoilYMin;
+  let recoilYMax;
+  //controlling recoil
+  if (
+    selectedBarrelAttachment === "barrelExtensionLevelOne" &&
+    selectedWeapon != "flatline" &&
+    selectedWeapon != "havocNoTurbo" &&
+    selectedWeapon != "havocTurbo"
+  ) {
+    recoilXMin = recoilPattern[bulletNumber].xMin * 0.9;
+    recoilXMax = recoilPattern[bulletNumber].xMax * 0.9;
+    recoilYMin = recoilPattern[bulletNumber].yMin * 0.9;
+    recoilYMax = recoilPattern[bulletNumber].yMax * 0.9;
+  } else if (
+    selectedBarrelAttachment === "barrelExtensionLevelTwo" &&
+    selectedWeapon != "flatline" &&
+    selectedWeapon != "havocNoTurbo" &&
+    selectedWeapon != "havocTurbo"
+  ) {
+    recoilXMin = recoilPattern[bulletNumber].xMin * 0.85;
+    recoilXMax = recoilPattern[bulletNumber].xMax * 0.85;
+    recoilYMin = recoilPattern[bulletNumber].yMin * 0.85;
+    recoilYMax = recoilPattern[bulletNumber].yMax * 0.85;
+  } else if (
+    selectedBarrelAttachment === "barrelExtensionLevelThree" &&
+    selectedWeapon != "flatline" &&
+    selectedWeapon != "havocNoTurbo" &&
+    selectedWeapon != "havocTurbo"
+  ) {
+    recoilXMin = recoilPattern[bulletNumber].xMin * 0.8;
+    recoilXMax = recoilPattern[bulletNumber].xMax * 0.8;
+    recoilYMin = recoilPattern[bulletNumber].yMin * 0.8;
+    recoilYMax = recoilPattern[bulletNumber].yMax * 0.8;
+  } else {
+    recoilXMin = recoilPattern[bulletNumber].xMin;
+    recoilXMax = recoilPattern[bulletNumber].xMax;
+    recoilYMin = recoilPattern[bulletNumber].yMin;
+    recoilYMax = recoilPattern[bulletNumber].yMax;
+  }
+
+  controls.getObject().children[0].rotation.x =
+    controls.getObject().children[0].rotation.x +
+    randomNumberinRange(recoilYMin, recoilYMax) * 0.0003;
+  controls.getObject().rotation.y =
+    controls.getObject().rotation.y +
+    randomNumberinRange(recoilXMin, recoilXMax) * 0.0003;
+
+  bulletNumber++;
+
+  bulletsLeft--;
+}
+
 function animate() {
   requestAnimationFrame(animate);
   let timeToAnimate = performance.now(); //gives metric to measure the time from start of animation, to end.
@@ -489,124 +608,7 @@ function animate() {
     }
     
     if (mouseDown && countdownToShot <= 0 && bulletsLeft > 0) {
-      let shotPosition = new THREE.Vector3();
-      var cameraDirection = controls
-        .getDirection(new THREE.Vector3(0, 0, 0))
-        .normalize()
-        .clone();
-      var rayCaster = new THREE.Raycaster();
-      
-      
-      //setting up for the hitpoint
-      var hitGeometry = new THREE.CircleGeometry(0.2, 16);
-      var hitMateral = new THREE.MeshBasicMaterial({ color: 0x0e0909 });
-      circle = new THREE.Mesh(hitGeometry, hitMateral);
-      circle.material.side = THREE.DoubleSide;
-      rayCaster.set(controls.getObject().position, cameraDirection);
-      var intersects = rayCaster.intersectObjects(scene.children);
-
-      for (
-        var intersectIndex = 0;
-        intersectIndex < intersects.length;
-        intersectIndex++
-      ) {
-        shotPosition = intersects[intersectIndex].point;
-      }
-      circle.alive = true;
-      scene.add(circle);
-      circle.name = "hit";
-      circleArray.push(circle);
-
-      if (shotPosition.x >= world.MAP_SIZE / 2 - 1) {
-        circle.position.set(
-          shotPosition.x - 0.1,
-          shotPosition.y,
-          shotPosition.z
-        );
-        circle.rotation.y = -Math.PI / 2;
-      } else if (shotPosition.x <= -(world.MAP_SIZE / 2 - 1)) {
-        circle.position.set(
-          shotPosition.x + 0.1,
-          shotPosition.y,
-          shotPosition.z
-        );
-        circle.rotation.y = -Math.PI / 2;
-      } else if (shotPosition.z >= world.MAP_SIZE / 2 - 1) {
-        circle.position.set(
-          shotPosition.x,
-          shotPosition.y,
-          shotPosition.z - 0.1
-        );
-      } else if (shotPosition.z <= -(world.MAP_SIZE / 2 - 1)) {
-        circle.position.set(
-          shotPosition.x,
-          shotPosition.y,
-          shotPosition.z + 0.1
-        );
-      } else if (
-        (shotPosition.y <= 6 && shotPosition.x <= world.MAP_SIZE / 2 - 1) ||
-        (shotPosition.y <= 6 && shotPosition.x >= -(world.MAP_SIZE / 2 - 1)) ||
-        (shotPosition.y <= 6 && shotPosition.z <= world.MAP_SIZE / 2 - 1) ||
-        (shotPosition.y <= 6 && shotPosition.z >= -(world.MAP_SIZE / 2 - 1))
-      ) {
-        circle.position.set(shotPosition.x, 0.1, shotPosition.z);
-        circle.rotation.x = -Math.PI / 2;
-      }
-
-      countdownToShot =
-        weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t;
-      let recoilXMin;
-      let recoilXMax;
-      let recoilYMin;
-      let recoilYMax;
-      //controlling recoil
-      if (
-        selectedBarrelAttachment === "barrelExtensionLevelOne" &&
-        selectedWeapon != "flatline" &&
-        selectedWeapon != "havocNoTurbo" &&
-        selectedWeapon != "havocTurbo"
-      ) {
-        recoilXMin = recoilPattern[bulletNumber].xMin * 0.9;
-        recoilXMax = recoilPattern[bulletNumber].xMax * 0.9;
-        recoilYMin = recoilPattern[bulletNumber].yMin * 0.9;
-        recoilYMax = recoilPattern[bulletNumber].yMax * 0.9;
-      } else if (
-        selectedBarrelAttachment === "barrelExtensionLevelTwo" &&
-        selectedWeapon != "flatline" &&
-        selectedWeapon != "havocNoTurbo" &&
-        selectedWeapon != "havocTurbo"
-      ) {
-        recoilXMin = recoilPattern[bulletNumber].xMin * 0.85;
-        recoilXMax = recoilPattern[bulletNumber].xMax * 0.85;
-        recoilYMin = recoilPattern[bulletNumber].yMin * 0.85;
-        recoilYMax = recoilPattern[bulletNumber].yMax * 0.85;
-      } else if (
-        selectedBarrelAttachment === "barrelExtensionLevelThree" &&
-        selectedWeapon != "flatline" &&
-        selectedWeapon != "havocNoTurbo" &&
-        selectedWeapon != "havocTurbo"
-      ) {
-        recoilXMin = recoilPattern[bulletNumber].xMin * 0.8;
-        recoilXMax = recoilPattern[bulletNumber].xMax * 0.8;
-        recoilYMin = recoilPattern[bulletNumber].yMin * 0.8;
-        recoilYMax = recoilPattern[bulletNumber].yMax * 0.8;
-      } else {
-        recoilXMin = recoilPattern[bulletNumber].xMin;
-        recoilXMax = recoilPattern[bulletNumber].xMax;
-        recoilYMin = recoilPattern[bulletNumber].yMin;
-        recoilYMax = recoilPattern[bulletNumber].yMax;
-      }
-
-      controls.getObject().children[0].rotation.x =
-        controls.getObject().children[0].rotation.x +
-        randomNumberinRange(recoilYMin, recoilYMax) * 0.0003;
-      controls.getObject().rotation.y =
-        controls.getObject().rotation.y +
-        randomNumberinRange(recoilXMin, recoilXMax) * 0.0003;
-
-      bulletNumber++;
-
-      bulletsLeft--;
+      shoot();
     }
 
     timeToAnimate = time - timeToAnimate;
@@ -623,3 +625,4 @@ function animate() {
 
   renderer.render(scene, camera);
 } //end of animate
+
