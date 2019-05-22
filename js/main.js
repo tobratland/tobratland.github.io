@@ -5,7 +5,7 @@ import { settings } from "./settings.js";
 import { weapons } from "./weapons.js";
 
 let camera, scene, renderer, controls, loadingManager;
-let wallNorth, wallEast, wallSouth, wallWest;
+let wallNorth, wallEast, wallSouth, wallWest, target
 let prevTime = performance.now();
 let direction = new THREE.Vector3();
 let moveForward = false;
@@ -32,6 +32,7 @@ let selectedBarrelAttachment =
 let bulletsLeft =
   weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
 var collidableMeshList = [];
+let destroyedTargets = 0
 let recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
 let bulletNumber = 0;
 let countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot;
@@ -45,6 +46,8 @@ let consentedToCookies;
 let cookieConsentButton = document.getElementById("acceptCookies");
 let cookieRejectionButton = document.getElementById("rejectCookies");
 let privacyBlocker = document.getElementById("privacy");
+let targets = []
+let numberOftargets = 6;
 let shootingAudio = new Howl({
   src: [
     "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".mp3",
@@ -71,10 +74,9 @@ crosshairCtx.strokeStyle = "#39ff14";
 crosshairCtx.fillStyle = "#39ff14";
 crosshairCtx.lineWidth = 2;
 crosshairCanvas.style.display = "none";
-hud.style.display = "none"
+hud.style.display = "none";
 crosshairCtx.clearRect(0, 0, 30, 30);
 crosshairCtx.fillRect(13, 13, 4, 4);
-
 
 var rayDirection = new THREE.Vector3(0, 0, -1);
 var rayRotation = new THREE.Euler(0, 0, 0, "YXZ");
@@ -141,7 +143,16 @@ function init() {
     "click",
     function() {
       //removes hits from scene.
-      clearBullets();
+      for(let i = 0; i < targets.length; i++) {
+        clearHits(targets[i]);
+      }
+      clearMisses();
+      if(targets = []) {
+        addMovingTargets()
+      } 
+      
+        
+      
     },
     false
   );
@@ -208,10 +219,17 @@ function init() {
     new THREE.PlaneGeometry(250, 250, 20, 20), // width, height, widthSegments, heightsegments
     new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: USE_WIREFRAME })
   );
+  const roof = new THREE.Mesh( //creates floor
+    new THREE.PlaneGeometry(250, 250, 20, 20), // width, height, widthSegments, heightsegments
+    new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: USE_WIREFRAME })
+  );
   floor.rotation.x -= Math.PI / 2; //rotates the floor so it actually is on the floor
   floor.receiveShadow = true; //allows the floor to receive shadows
   scene.add(floor); //adds the floor to the scene
-
+  roof.rotation.x -= Math.PI / 2 //rotates the roof so it actually is on the roof
+  roof.position.y = 100
+  roof.material.side = THREE.DoubleSide
+  scene.add(roof); //adds the roof to the scene
   //walls
   const wallheight = world.MAP_HEIGHT; //sets wall atributes from world.js
   const wallwidth = world.MAP_SIZE; //sets wall atributes from world.js
@@ -226,21 +244,24 @@ function init() {
   wallEast = new THREE.Mesh(geometry, material);
   wallWest = new THREE.Mesh(geometry, material);
   scene.add(wallNorth, wallSouth, wallEast, wallWest); //Adds walls to scene
-  collidableMeshList.push(wallNorth, wallSouth, wallEast, wallWest);
+  collidableMeshList.push(wallNorth, wallSouth, wallEast, wallWest, floor, roof);
 
   //targets
-  var target1Geometry = new THREE.CircleGeometry(4, 16);
-  var target1Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
-  var target1 = new THREE.Mesh(target1Geometry, target1Material);
-  var target2Geometry = new THREE.CircleGeometry(6, 16);
-  var target2Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
-  var target2 = new THREE.Mesh(target2Geometry, target2Material);
-  var target3Geometry = new THREE.CircleGeometry(10, 16);
-  var target3Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
-  var target3 = new THREE.Mesh(target3Geometry, target3Material);
+  let target1Geometry = new THREE.CircleGeometry(4, 16);
+  let target1Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
+  let target1 = new THREE.Mesh(target1Geometry, target1Material);
+  let target2Geometry = new THREE.CircleGeometry(6, 16);
+  let target2Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
+  let target2 = new THREE.Mesh(target2Geometry, target2Material);
+  let target3Geometry = new THREE.CircleGeometry(10, 16);
+  let target3Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
+  let target3 = new THREE.Mesh(target3Geometry, target3Material);
   scene.add(target1);
   scene.add(target2);
   scene.add(target3);
+  addMovingTargets()
+
+  
   target1.position.z -= 124.99;
   target1.position.y += 15;
   target1.position.x += 18;
@@ -326,7 +347,6 @@ function init() {
             startGunRotationY =  controls.getObject().rotation.y */
     mouseDown = true;
     shooting = true;
-   
   };
 
   const onMouseUp = function() {
@@ -355,15 +375,44 @@ function changeCountdownToShot() {
   countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot;
 }
 
-function clearBullets() {
+function clearHits(target) {
+  for (let i = 0; i < target.hits.length; i++) {
+    
+    scene.remove(target.hits[i]);
+    
+  }target.hits = [];
+  
+  
+}
+function clearMisses() {
   for (let i = 0; i < circleArray.length; i++) {
-    let o = scene.getObjectByName("hit");
-    scene.remove(o);
+    let m = scene.getObjectByName("miss");
+    scene.remove(m);
   }
   circleArray = [];
+
 }
 function selectWeapon() {
   selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value;
+}
+function addMovingTargets(){
+  for(let i = 0; i < numberOftargets; i++ ) {
+    let targetgeometry = new THREE.SphereGeometry( randomNumberinRange(3, 6), 32, 32);
+    target = new THREE.Mesh( targetgeometry, new THREE.MeshLambertMaterial( { color: 0xffff00f } ) );
+    target.position.x = randomNumberinRange(-125, 125)
+    target.position.y = randomNumberinRange(0, 50)
+    target.position.z = randomNumberinRange(-125, 125)
+    
+    target.castShadow = true;
+    scene.add(target)
+    collidableMeshList.push(target)
+    target.name = "target" + i
+    target.hits = []
+    target.speedX = randomNumberinRange(-0.7, 0.7)
+    target.speedY = randomNumberinRange(-0.7, 0.7)
+    target.speedZ = randomNumberinRange(-0.7, 0.7)
+    targets.push(target)
+  }
 }
 function selectBarrelMod() {
   selectedBarrelAttachment =
@@ -385,7 +434,7 @@ function updateAudio() {
       "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".mp3",
       "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".ogg"
     ]
-  })
+  });
 }
 function changeMouseSensitivity() {
   settings.sens = document.getElementById("MouseSensNumber").value;
@@ -393,13 +442,10 @@ function changeMouseSensitivity() {
 }
 function updateMute() {
   mute = document.getElementById("mute").checked;
-  console.log(mute)
-  if(mute) {
-    muted = true;
-  } else {
-    muted = false;
-  }
+
+  mute === true ? muted = true : muted = false //trying shorthand if
 }
+
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -423,67 +469,40 @@ function randomNumberinRange(min, max) {
 }
 
 function shoot() {
-  console.log(shooting)
+  //handles everything that happens when the player shoots except for sound
   let shotPosition = new THREE.Vector3();
   const cameraDirection = controls
     .getDirection(new THREE.Vector3(0, 0, 0))
     .normalize()
     .clone();
   let rayCaster = new THREE.Raycaster();
-  let hitGeometry = new THREE.CircleGeometry(0.2, 16);
+  let hitGeometry = new THREE.SphereGeometry(0.2, 16, 16);
   let hitMateral = new THREE.MeshBasicMaterial({ color: 0x0e0909 });
   circle = new THREE.Mesh(hitGeometry, hitMateral);
   circle.material.side = THREE.DoubleSide;
   rayCaster.set(controls.getObject().position, cameraDirection);
-  let intersects = rayCaster.intersectObjects(scene.children);
-
-  for (
-    var intersectIndex = 0;
-    intersectIndex < intersects.length;
-    intersectIndex++
-  ) {
-    shotPosition = intersects[intersectIndex].point;
-  }
-  circle.alive = true;
+  let intersects = rayCaster.intersectObjects(collidableMeshList);
+ 
+  shotPosition = intersects[0].point
   scene.add(circle);
-  circle.name = "hit";
+  for(let i = 0; i < targets.length; i++) {
+    
+    if(intersects[0].object.name == "target" + [i]){
+      targets[i].hits.push(circle);
+      circle.name = "hit";
+    }else {
+      circle.name = "miss";
+    }
+  }
+  
+    
+  
   circleArray.push(circle);
 
-  if (shotPosition.x >= world.MAP_SIZE / 2 - 1) {
-    circle.position.set(
-      shotPosition.x - 0.1,
-      shotPosition.y,
-      shotPosition.z
-    );
-    circle.rotation.y = -Math.PI / 2;
-  } else if (shotPosition.x <= -(world.MAP_SIZE / 2 - 1)) {
-    circle.position.set(
-      shotPosition.x + 0.1,
-      shotPosition.y,
-      shotPosition.z
-    );
-    circle.rotation.y = -Math.PI / 2;
-  } else if (shotPosition.z >= world.MAP_SIZE / 2 - 1) {
-    circle.position.set(
-      shotPosition.x,
-      shotPosition.y,
-      shotPosition.z - 0.1
-    );
-  } else if (shotPosition.z <= -(world.MAP_SIZE / 2 - 1)) {
-    circle.position.set(
-      shotPosition.x,
-      shotPosition.y,
-      shotPosition.z + 0.1
-    );
-  } else if (
-    (shotPosition.y <= 6 && shotPosition.x <= world.MAP_SIZE / 2 - 1) ||
-    (shotPosition.y <= 6 && shotPosition.x >= -(world.MAP_SIZE / 2 - 1)) ||
-    (shotPosition.y <= 6 && shotPosition.z <= world.MAP_SIZE / 2 - 1) ||
-    (shotPosition.y <= 6 && shotPosition.z >= -(world.MAP_SIZE / 2 - 1))
-  ) {
-    circle.position.set(shotPosition.x, 0.1, shotPosition.z);
-    circle.rotation.x = -Math.PI / 2;
-  }
+
+    circle.position.set(shotPosition.x, shotPosition.y, shotPosition.z);
+
+  
 
   countdownToShot =
     weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t;
@@ -546,6 +565,61 @@ function animate() {
   let timeToAnimate = performance.now(); //gives metric to measure the time from start of animation, to end.
   let time = performance.now();
   let delta = (time - prevTime) / 1000;
+  
+  for(let i = 0; i < targets.length; i++) {
+    if(targets[i].position.y >= 50) {
+    targets[i].speedY = randomNumberinRange(-0.3, -0.8)
+      }
+    if(targets[i].position.y <= 5) {
+      targets[i].speedY = randomNumberinRange(0.3, 0.8)
+      }
+    if(targets[i].position.x >= 125) {
+      targets[i].speedX = randomNumberinRange(-0.3, -0.8)
+      }
+    if(targets[i].position.x <= -125) {
+      targets[i].speedX = randomNumberinRange(0.3, 0.8)
+      }
+    if(targets[i].position.z >= 125) {
+      targets[i].speedZ = randomNumberinRange(-0.3, -0.8)
+      }
+    if(targets[i].position.z <= - 125) {
+      targets[i].speedZ = randomNumberinRange(0.3, 0.8)
+      }
+
+  }
+  
+  for(let i = 0; i < targets.length; i++) { //Moves hits with targets
+    if(targets[i].hits.length > 0 ) {
+      for(let j = 0; j < targets[i].hits.length; j++) {
+        targets[i].hits[j].position.x += targets[i].speedX;
+        targets[i].hits[j].position.y += targets[i].speedY;
+        targets[i].hits[j].position.z += targets[i].speedZ;
+      }
+      if(targets[i].hits.length > 5) {
+        targets[i].material.color.setHex( 0xfffff )
+      }
+      if(targets[i].hits.length > 10) {
+        targets[i].material.color.setHex( 0xff0000 )
+      }
+      if(targets[i].hits.length > 15) {
+        let selectedObject = scene.getObjectByName(targets[i].name)
+        scene.remove(selectedObject);
+        clearHits(targets[i]);
+        collidableMeshList = collidableMeshList.filter(function (obj) {
+          return obj.name != targets[i].name;
+          });
+        destroyedTargets++
+    
+      }
+    }
+  }
+
+  
+  for(let i = 0; i < targets.length; i++) {
+  targets[i].position.x += targets[i].speedX
+  targets[i].position.y += targets[i].speedY
+  targets[i].position.z += targets[i].speedZ
+}
 
   /* shooting, movement including jumping */
   if (controls.isLocked === true) {
@@ -586,31 +660,35 @@ function animate() {
       controls.getObject().translateZ(velocity.z * delta);
     }
 
-    //for updating bullets left in hud 
-    document.getElementById("bulletsLeft").innerHTML = bulletsLeft; 
-    document.getElementById("totalbullets").innerHTML = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
+    //for updating bullets left in hud
+    document.getElementById("bulletsLeft").innerHTML = bulletsLeft;
+    document.getElementById("totalbullets").innerHTML =
+      weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
     //can the player jump and sets the player on ground while not jumping.
     if (controls.getObject().position.y < 10) {
       velocity.y = 0;
       controls.getObject().position.y = 10;
       player.canJump = true;
     }
-    if(bulletsLeft <= 0){
+    if (bulletsLeft <= 0) {
       shootingAudio.stop();
       playingShootingAudio = false;
     }
-    /* shooting */
-    if(mouseDown && !playingShootingAudio && bulletsLeft > 0){
-      if(!muted) {
-      shootingAudio.play();
-      playingShootingAudio = true;
+    /* shooting audio*/
+    if (mouseDown && !playingShootingAudio && bulletsLeft > 0) {
+      if (!muted) {
+        shootingAudio.play();
+        playingShootingAudio = true;
       }
     }
-    
+    // call shoot to shoot bullets
     if (mouseDown && countdownToShot <= 0 && bulletsLeft > 0) {
       shoot();
     }
-
+    if(destroyedTargets >= numberOftargets) {
+      destroyedTargets = 0;
+      targets = []
+    }
     timeToAnimate = time - timeToAnimate;
 
     if (countdownToShot > 0) {
@@ -621,8 +699,8 @@ function animate() {
       }
     }
     prevTime = time;
+    
   } //end of movement + jumping
 
   renderer.render(scene, camera);
 } //end of animate
-
