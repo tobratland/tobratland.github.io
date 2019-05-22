@@ -3,6 +3,7 @@ import { player } from "./player.js";
 import { models } from "./models.js";
 import { settings } from "./settings.js";
 import { weapons } from "./weapons.js";
+import { score } from "./challengeModeScore.js"
 
 let camera, scene, renderer, controls, loadingManager;
 let wallNorth, wallEast, wallSouth, wallWest, target
@@ -26,6 +27,7 @@ let clearBulletsButton = document.getElementById("clearBulletsButton");
 let selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value;
 let selectedMagazine =
   magazineSelector.options[magazineSelector.selectedIndex].value;
+let reloadTime = 0
 let selectedBarrelAttachment =
   barrelAttachmentSelector.options[barrelAttachmentSelector.selectedIndex]
     .value;
@@ -48,6 +50,15 @@ let cookieRejectionButton = document.getElementById("rejectCookies");
 let privacyBlocker = document.getElementById("privacy");
 let targets = []
 let numberOftargets = 6;
+
+let scoreTime = score.time
+let startScoreTime = 0
+let endScoreTime = 0
+let scoreShotsFired = score.shotsFired
+let scoreReloaded = score.reloaded
+let scoreWeapon = score.weapon
+
+let playMode = "training"
 let shootingAudio = new Howl({
   src: [
     "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".mp3",
@@ -55,6 +66,7 @@ let shootingAudio = new Howl({
   ]
 });
 let playingShootingAudio = false;
+
 if (localStorage.getItem("consentedToCookies") != null) {
   consentedToCookies = localStorage.getItem("consentedToCookies");
   console.log(consentedToCookies);
@@ -94,8 +106,8 @@ function init() {
   controls = new THREE.PointerLockControls(camera);
 
   const blocker = document.getElementById("blocker"); //defines up the blocker element from the document
-  const instructions = document.getElementById("settingsPage"); // defines up the instructions element from the document
-  const instructionButton = document.getElementById("playButton");
+  const playButton = document.getElementById("playButton");
+  const challengeButton = document.getElementById("challengeButton");
 
   //create the scene
   scene = new THREE.Scene();
@@ -131,11 +143,30 @@ function init() {
     localStorage.setItem("consentedToCookies", false);
   });
 
-  //add eventlisteners to the instructions to make click lock controls and adds eventlisteners to the controls to lock/unlock pointerlock
-  instructionButton.addEventListener(
+  //add eventlisteners to the playbutton to make click lock controls and adds eventlisteners to the controls to lock/unlock pointerlock
+  playButton.addEventListener(
     "click",
     function() {
       controls.lock();
+      playMode = "training"
+    },
+    false
+  );
+  challengeButton.addEventListener(
+    "click",
+    function() {
+      controls.lock();
+      playMode = "challenge"
+      clearTargets()
+      endScoreTime = 0;
+      scoreShotsFired = 0;
+      scoreReloaded = 0;
+      scoreWeapon = selectedWeapon
+      
+      if(targets = []) {
+        addMovingTargets()
+      } 
+      
     },
     false
   );
@@ -147,9 +178,7 @@ function init() {
         clearHits(targets[i]);
       }
       clearMisses();
-      if(targets = []) {
-        addMovingTargets()
-      } 
+      clearTargets()
       
         
       
@@ -181,6 +210,11 @@ function init() {
     crosshairCanvas.style.display = "none";
     hud.style.display = "none";
     player.canShoot = false;
+    if(playMode === "challenge") {
+      scoreTime = (endScoreTime - startScoreTime).toFixed(3) + " seconds";
+      updateScore()
+    }
+      
   });
 
   //for loading models
@@ -259,8 +293,8 @@ function init() {
   scene.add(target1);
   scene.add(target2);
   scene.add(target3);
-  addMovingTargets()
 
+  
   
   target1.position.z -= 124.99;
   target1.position.y += 15;
@@ -358,9 +392,24 @@ function init() {
     changeCountdownToShot();
   };
   const reload = function() {
+    if(bulletsLeft === 0 && playMode === "challenge") {
+      reloadTime = weapons.apexLegends[selectedWeapon].reloadTime.empty[selectedMagazine]
+    } else if(bulletsLeft > 0 && playMode === "challenge") {
+      reloadTime = weapons.apexLegends[selectedWeapon].reloadTime.loaded[selectedMagazine]
+    } else {
+      reloadTime = 0
+    }
+    if(playMode === "challenge") {
+      scoreReloaded++
+    }
+    shootingAudio.stop();
+    playingShootingAudio = false;
+    console.log(reloadTime)
     bulletNumber = 0;
     bulletsLeft =
       weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
+    
+    
     changeCountdownToShot();
   };
 
@@ -383,6 +432,16 @@ function clearHits(target) {
   }target.hits = [];
   
   
+}
+function clearTargets() {
+  for(let i = 0; i < targets.length; i++) {
+  let selectedObject = scene.getObjectByName(targets[i].name)
+        scene.remove(selectedObject);
+        clearHits(targets[i]);
+        collidableMeshList = collidableMeshList.filter(function (obj) {
+          return obj.name != targets[i].name;
+          });
+        }
 }
 function clearMisses() {
   for (let i = 0; i < circleArray.length; i++) {
@@ -439,6 +498,20 @@ function updateAudio() {
 function changeMouseSensitivity() {
   settings.sens = document.getElementById("MouseSensNumber").value;
   camera.updateProjectionMatrix();
+}
+
+function updateScore() {
+  if(destroyedTargets == targets.length) {
+    document.getElementById("defeatedTargets").innerHTML = "You destroyed all of the targets, good job friend!"
+  } else {
+    document.getElementById("defeatedTargets").innerHTML = "You only got " + destroyedTargets + " out of " + targets.length + " targets, not good!"
+  }
+  
+  document.getElementById("timeUsed").innerHTML = "Time used: " + scoreTime;
+  document.getElementById("shotsFired").innerHTML = "Shots Fired: " + scoreShotsFired;
+  document.getElementById("reloadedTimes").innerHTML = "Amount of times you reloaded: " + scoreReloaded;
+  document.getElementById("weaponSelected").innerHTML = "Weapon used: " + scoreWeapon;
+  
 }
 function updateMute() {
   mute = document.getElementById("mute").checked;
@@ -556,8 +629,10 @@ function shoot() {
     randomNumberinRange(recoilXMin, recoilXMax) * 0.0003;
 
   bulletNumber++;
-
   bulletsLeft--;
+  if(playMode === "challenge") {
+    scoreShotsFired++
+  }
 }
 
 function animate() {
@@ -664,6 +739,11 @@ function animate() {
     document.getElementById("bulletsLeft").innerHTML = bulletsLeft;
     document.getElementById("totalbullets").innerHTML =
       weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
+    if(reloadTime > 0.1) {
+      document.getElementById("bulletsLeft").innerHTML = "RELOADING";}
+      else{
+        document.getElementById("bulletsLeft").innerHTML = bulletsLeft;
+      }
     //can the player jump and sets the player on ground while not jumping.
     if (controls.getObject().position.y < 10) {
       velocity.y = 0;
@@ -675,14 +755,14 @@ function animate() {
       playingShootingAudio = false;
     }
     /* shooting audio*/
-    if (mouseDown && !playingShootingAudio && bulletsLeft > 0) {
+    if (mouseDown && !playingShootingAudio && bulletsLeft > 0 && reloadTime <= 0.1) {
       if (!muted) {
         shootingAudio.play();
         playingShootingAudio = true;
       }
     }
     // call shoot to shoot bullets
-    if (mouseDown && countdownToShot <= 0 && bulletsLeft > 0) {
+    if (mouseDown && countdownToShot <= 0 && bulletsLeft > 0 && reloadTime <= 0.1) {
       shoot();
     }
     if(destroyedTargets >= numberOftargets) {
@@ -698,8 +778,11 @@ function animate() {
         countdownToShot = countdownToShot;
       }
     }
+    reloadTime -= delta + timeToAnimate;
     prevTime = time;
-    
+    if(playMode === "challenge" && destroyedTargets != targets.length) {
+      endScoreTime += delta + timeToAnimate;
+    }
   } //end of movement + jumping
 
   renderer.render(scene, camera);
