@@ -70,7 +70,7 @@
         <button id="clearBulletsButton">Remove hits</button>
       </div>
       <div class="play">
-        <button id="playButton">Play game</button>
+        <button id="playButton">Play <br> Training mode</button>
       </div>
       <div class="contact">
         <h2>Contact me</h2>
@@ -138,6 +138,43 @@
             >Barrel extension level 3</option
           >
         </select>
+      </div>
+      <div class="challenge">
+        <h2>Challenge Mode</h2>
+        <div id="difficulty">
+          <h4>Difficulty</h4>
+          <select id="challengeDifficulty">
+            <option value="easy">Easy</option>
+            <option value="harder"
+              >Harder</option
+            >
+            <option value="reallyHard"
+              >Really hard</option
+            >
+            <option value="tooHard"
+              >Send help, too hard</option
+            >
+          </select>
+        </div>
+        <br>
+          <div class="play">
+            <button id="challengeButton">Play challenge</button>
+          </div>
+          <br>
+          <br>  
+          <h4>Your Last score</h4>
+          <div id="defeatedTargets">
+            </div>
+          <div id="timeUsed">
+          </div>
+          <div id="shotsFired">
+          </div>
+          <div id="reloadedTimes">
+          </div>
+          <div id="weaponSelected">
+          </div>
+          
+          
       </div>
       <div class="settings">
         <div class="FOVslidecontainer">
@@ -225,6 +262,8 @@
     </div>
     <script src="./js/library/three.js" type="module"></script>
     <script src="./js/world.js" type="module"></script>
+    <script src="./js/challengeModeScore.js" type="module"></script>
+    <script src="./js/target.js" type="module"></script>
     <script src="./js/library/howler.js" type="module"></script>
     <script src="./js/player.js" type="module"></script>
     <script src="./js/library/PointerLockControls.js" type="module"></script>

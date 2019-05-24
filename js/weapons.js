@@ -147,14 +147,18 @@ export const weapons = {
             },
             roundsPerMinute: 1080,
             reloadTime: {
-                loadedNoExtension: 1.80,
-                loadedExtensionLevelOne:1.80,
-                loadedExtensionLevelTwo: 1.71,
-                loadedExtensionLevelThree: 1.62,
-                EmptyNoExtension: 2.45,
-                emptyExtensionLevelOne:2.45,
-                emptyExtensionLevelTwo: 2.33,
-                emptyExtensionLevelThree: 2.21,     
+                loaded: {
+                    noExtension: 1.80,
+                    extensionLevelOne: 1.80,
+                    extensionLevelTwo: 1.71,
+                    extensionLevelThree: 1.62
+                },
+                empty: {
+                    noExtension: 2.45,
+                    extensionLevelOne: 2.45,
+                    extensionLevelTwo: 2.33,
+                    extensionLevelThree: 2.21
+                }      
             }
         }, //end of R99
         r301: {
@@ -302,14 +306,18 @@ export const weapons = {
             },
             roundsPerMinute: 810,
             reloadTime: {
-                loadedNoExtension: 2.40,
-                loadedExtensionLevelOne:2.40,
-                loadedExtensionLevelTwo: 2.28,
-                loadedExtensionLevelThree: 2.16,
-                EmptyNoExtension: 3.20,
-                emptyExtensionLevelOne:3.20,
-                emptyExtensionLevelTwo: 3.04,
-                emptyExtensionLevelThree: 2.88,     
+                loaded: {
+                    noExtension: 2.40,
+                    extensionLevelOne: 2.40,
+                    extensionLevelTwo: 2.28,
+                    extensionLevelThree: 2.16
+                },
+                empty: {
+                    noExtension: 3.20,
+                    extensionLevelOne: 3.20,
+                    extensionLevelTwo: 3.04,
+                    extensionLevelThree: 2.88
+                } 
             }
         }, // end of R301
         re45: {
@@ -440,14 +448,18 @@ export const weapons = {
                 },
                 roundsPerMinute: 780,
                 reloadTime: {
-                    loadedNoExtension: 1.74,
-                    loadedExtensionLevelOne: 1.74,
-                    loadedExtensionLevelTwo: 1.65,
-                    loadedExtensionLevelThree: 1.57,
-                    EmptyNoExtension: 2.12,
-                    emptyExtensionLevelOne: 2.12,
-                    emptyExtensionLevelTwo: 2.01,
-                    emptyExtensionLevelThree: 1.91,     
+                    loaded: {
+                        noExtension: 1.74,
+                        extensionLevelOne: 1.74,
+                        extensionLevelTwo: 1.65,
+                        extensionLevelThree: 1.57
+                    },
+                    empty: {
+                        noExtension: 2.12,
+                        extensionLevelOne: 2.12,
+                        extensionLevelTwo: 2.01,
+                        extensionLevelThree: 1.91
+                    }   
                 }
             }, //end of RE-45
             alternator: {
@@ -578,14 +590,18 @@ export const weapons = {
                     },
                     roundsPerMinute: 600,
                     reloadTime: {
-                        loadedNoExtension: 1.90,
-                        loadedExtensionLevelOne: 1.90,
-                        loadedExtensionLevelTwo: 1.81,
-                        loadedExtensionLevelThree: 1.71,
-                        EmptyNoExtension: 2.23,
-                        emptyExtensionLevelOne: 2.23,
-                        emptyExtensionLevelTwo: 2.12,
-                        emptyExtensionLevelThree: 2.01,     
+                        loaded: {
+                            noExtension: 1.90,
+                            extensionLevelOne: 1.90,
+                            extensionLevelTwo: 1.81,
+                            extensionLevelThree: 1.71
+                        },
+                        empty: {
+                            noExtension: 2.23,
+                            extensionLevelOne: 2.23,
+                            extensionLevelTwo: 2.12,
+                            extensionLevelThree: 2.01
+                        }   
                     }
                 }, //end of alternator
                 flatline: {
@@ -816,14 +832,18 @@ export const weapons = {
                         },
                         roundsPerMinute: 600,
                         reloadTime: {
-                            loadedNoExtension: 2.40,
-                            loadedExtensionLevelOne: 2.40,
-                            loadedExtensionLevelTwo: 2.21,
-                            loadedExtensionLevelThree: 2.09,
-                            EmptyNoExtension: 3.10,
-                            emptyExtensionLevelOne: 3.10,
-                            emptyExtensionLevelTwo: 2.85,
-                            emptyExtensionLevelThree: 2.70,     
+                            loaded: {
+                                noExtension: 2.40,
+                                extensionLevelOne: 2.40,
+                                extensionLevelTwo: 2.21,
+                                extensionLevelThree: 2.09
+                            },
+                            empty: {
+                                noExtension: 3.10,
+                                extensionLevelOne: 3.10,
+                                extensionLevelTwo: 2.85,
+                                extensionLevelThree: 2.70
+                            }  
                         }
                     }, // end of flatline
                     spitfire: {
@@ -1228,14 +1248,18 @@ export const weapons = {
                             },
                             roundsPerMinute: 540,
                             reloadTime: {
-                                loadedNoExtension: 2.80,
-                                loadedExtensionLevelOne: 2.80,
-                                loadedExtensionLevelTwo: 2.58,
-                                loadedExtensionLevelThree: 2.44,
-                                EmptyNoExtension: 3.33,
-                                emptyExtensionLevelOne: 3.33,
-                                emptyExtensionLevelTwo: 3.06,
-                                emptyExtensionLevelThree: 2.90,     
+                                loaded: {
+                                    noExtension: 2.8,
+                                    extensionLevelOne: 2.8,
+                                    extensionLevelTwo: 2.58,
+                                    extensionLevelThree: 2.44
+                                },
+                                empty: {
+                                    noExtension: 3.33,
+                                    extensionLevelOne: 3.33,
+                                    extensionLevelTwo: 3.06,
+                                    extensionLevelThree: 2.90
+                                }  
                             }
                         }, // end of flatline
                         devotionNoTurbo: {
@@ -1566,14 +1590,18 @@ export const weapons = {
                             },
                             roundsPerMinute: 1080,
                             reloadTime: {
-                                loadedNoExtension: 1.80,
-                                loadedExtensionLevelOne:1.80,
-                                loadedExtensionLevelTwo: 1.71,
-                                loadedExtensionLevelThree: 1.62,
-                                EmptyNoExtension: 2.45,
-                                emptyExtensionLevelOne:2.45,
-                                emptyExtensionLevelTwo: 2.33,
-                                emptyExtensionLevelThree: 2.21,     
+                                loaded: {
+                                    noExtension: 1.80,
+                                    extensionLevelOne: 1.80,
+                                    extensionLevelTwo: 1.71,
+                                    extensionLevelThree: 1.62
+                                },
+                                empty: {
+                                    noExtension: 2.45,
+                                    extensionLevelOne: 2.45,
+                                    extensionLevelTwo: 2.33,
+                                    extensionLevelThree: 2.21
+                                }  
                             }
                         }, //end of DevotionNoTurbo
                         devotionTurbo: {
@@ -1901,14 +1929,18 @@ export const weapons = {
                             },
                             roundsPerMinute: 1080,
                             reloadTime: {
-                                loadedNoExtension: 1.80,
-                                loadedExtensionLevelOne:1.80,
-                                loadedExtensionLevelTwo: 1.71,
-                                loadedExtensionLevelThree: 1.62,
-                                EmptyNoExtension: 2.45,
-                                emptyExtensionLevelOne:2.45,
-                                emptyExtensionLevelTwo: 2.33,
-                                emptyExtensionLevelThree: 2.21,     
+                                loaded: {
+                                    noExtension: 1.80,
+                                    extensionLevelOne: 1.80,
+                                    extensionLevelTwo: 1.71,
+                                    extensionLevelThree: 1.62
+                                },
+                                empty: {
+                                    noExtension: 2.45,
+                                    extensionLevelOne: 2.45,
+                                    extensionLevelTwo: 2.33,
+                                    extensionLevelThree: 2.21
+                                }    
                             }
                         }, //end of devotionTurbo
                         havocNoTurbo: {
@@ -2153,14 +2185,18 @@ export const weapons = {
                             },
                             roundsPerMinute: 672,
                             reloadTime: {
-                                loadedNoExtension: 2.40,
-                                loadedExtensionLevelOne:2.40,
-                                loadedExtensionLevelTwo: 2.40,
-                                loadedExtensionLevelThree: 2.40,
-                                EmptyNoExtension: 3.20,
-                                emptyExtensionLevelOne: 3.20,
-                                emptyExtensionLevelTwo: 3.20,
-                                emptyExtensionLevelThree: 3.20,     
+                                loaded: {
+                                    noExtension: 2.40,
+                                    extensionLevelOne: 2.40,
+                                    extensionLevelTwo: 2.40,
+                                    extensionLevelThree: 2.40
+                                },
+                                empty: {
+                                    noExtension: 3.20,
+                                    extensionLevelOne: 3.20,
+                                    extensionLevelTwo: 3.20,
+                                    extensionLevelThree: 3.20
+                                }     
                             }
                         }, //end of havocNoTurbo
                         havocTurbo: {
@@ -2403,14 +2439,18 @@ export const weapons = {
                             },
                             roundsPerMinute: 672,
                             reloadTime: {
-                                loadedNoExtension: 2.40,
-                                loadedExtensionLevelOne:2.40,
-                                loadedExtensionLevelTwo: 2.40,
-                                loadedExtensionLevelThree: 2.40,
-                                EmptyNoExtension: 3.20,
-                                emptyExtensionLevelOne: 3.20,
-                                emptyExtensionLevelTwo: 3.20,
-                                emptyExtensionLevelThree: 3.20,     
+                                loaded: {
+                                    noExtension: 2.40,
+                                    extensionLevelOne: 2.40,
+                                    extensionLevelTwo: 2.40,
+                                    extensionLevelThree: 2.40
+                                },
+                                empty: {
+                                    noExtension: 3.20,
+                                    extensionLevelOne: 3.20,
+                                    extensionLevelTwo: 3.20,
+                                    extensionLevelThree: 3.20
+                                }  
                             }
                         }, //end of havocTurbo
                         
