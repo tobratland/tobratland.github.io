@@ -11,15 +11,24 @@
   background-color: rgb(26, 26, 29, 0.9);
   color: white;
 }
+#startPage {
+  position: absolute;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(26, 26, 29, 0.9);
+  color: white;
+}
 #warning {
   color: lightcoral;
 }
 .grid-container {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-rows: 0.7fr 1fr 1fr 1fr 1fr 1fr 1fr;
     grid-template-areas: 
       "beer beer logo about about" 
+      "controller controller controller controller controller" 
       "challenge challenge play weapon weapon" 
       "challenge challenge clear weapon weapon" 
       "contact contact settings instructions instructions" 
@@ -27,6 +36,18 @@
       "footer footer footer footer footer";
   }
   
+  .controller { 
+    grid-area: controller; 
+    justify-self: center;
+    align-self: center;  
+  }
+  .controllerButtons { 
+    grid-area: controller; 
+    justify-self: center;
+    align-self: center; 
+    display: inline-flex; 
+  }
+
   .challenge { 
     grid-area: challenge; 
     justify-self: center;
@@ -118,7 +139,7 @@
   }
 
 
-#playButton {
+.button {
   background-color: black;
   -moz-border-radius:28px;
   -webkit-border-radius:28px;
@@ -133,35 +154,14 @@
   text-decoration:none;
   text-shadow: none;
 }
-#playButton:hover {
+.button:hover {
   background-color: #1a1a1d;
 }
-#playButton:active {
+.button:active {
     position:relative;
     top:1px;
 }
-#challengeButton {
-  background-color: black;
-  -moz-border-radius:28px;
-  -webkit-border-radius:28px;
-  border-radius:28px;
-  border:1px solid #000300;
-  display:inline-block;
-  cursor:pointer;
-  color: white;
-  font-family:Arial;
-  font-size:22px;
-  padding:16px 31px;
-  text-decoration:none;
-  text-shadow: none;
-}
-#challengeButton:hover {
-  background-color: #1a1a1d;
-}
-#challengeButton:active {
-    position:relative;
-    top:1px;
-}
+
 #acceptCookies {
   background-color: Green;
   -moz-border-radius:10px;

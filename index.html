@@ -42,10 +42,9 @@
         style="width: 30; height: 30; z-index: 2; border: 0px;"
       ></canvas>
     </div>
+    
     <div id="blocker" class="grid-container">
-      <div class="world">
-        <h2>Reserved for more settings and stuff</h2>
-      </div>
+    
       <div class="instructions">
         <h3>Instructions</h3>
         <p>Recoil training for Apex Legends</p>
@@ -70,7 +69,7 @@
         <button id="clearBulletsButton">Remove hits</button>
       </div>
       <div class="play">
-        <button id="playButton">Play <br> Training mode</button>
+        <button id="playButton" class="button">Play <br> Training mode</button>
       </div>
       <div class="contact">
         <h2>Contact me</h2>
@@ -96,6 +95,13 @@
               style="width:72px;height:72px;border:0;"
             />
           </a>
+        </div>
+      </div>
+      <div class="controller">
+        <h2>Controls</h2>
+        <div class="controllerButtons">
+            <button id="controllerButtonMouse" class="button">Mouse</button>
+            <button id="controllerButtonGamePad" class="button">Gamepad</button>
         </div>
       </div>
       <div class="weapon">
@@ -158,7 +164,7 @@
         </div>
         <br>
           <div class="play">
-            <button id="challengeButton">Play challenge</button>
+            <button id="challengeButton" class="button">Play challenge</button>
           </div>
           <br>
           <br>  
@@ -232,7 +238,7 @@
       <div id="privacy">
         <p>
           My site uses cookies to personalise content and adverts, and to
-          analyse traffic!
+          analyse traffic! ok?
         </p>
         <button id="acceptCookies">Thats fine</button>
         <button id="rejectCookies">No thanks</button>

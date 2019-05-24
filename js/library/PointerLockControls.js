@@ -1,5 +1,6 @@
 import { settings } from "../settings.js";
 
+
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author Mugen87 / https://github.com/Mugen87
@@ -7,6 +8,9 @@ import { settings } from "../settings.js";
  */
 let yawObject;
 let pitchObject;
+
+
+
 let reverseMouseUpDown =  document.getElementById("reverseMouseUpDownCheckbox") 
 let reverseMouseLeftRight =  document.getElementById("reverseMouseLeftRightCheckbox")
 THREE.PointerLockControls = function ( camera, domElement ) {
@@ -29,9 +33,9 @@ THREE.PointerLockControls = function ( camera, domElement ) {
 	var PI_2 = Math.PI / 2;
 
 	function onMouseMove( event ) {
-
+		
 		if ( scope.isLocked === false ) return;
-
+		
 		var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
 		var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 		if(reverseMouseLeftRight.checked) { //logic for reversed/non-reversed mouse
