@@ -3,8 +3,13 @@ import { player } from "./player.js";
 import { models } from "./models.js";
 import { settings } from "./settings.js";
 import { weapons } from "./weapons.js";
+<<<<<<< HEAD
 import { score } from "./challengeModeScore.js";
 
+=======
+import { score } from "./challengeModeScore.js"
+//test
+>>>>>>> 266115ca4bdf8853b8edd73ed3799fbea1c812c6
 let camera, scene, renderer, controls, loadingManager;
 let wallNorth, wallEast, wallSouth, wallWest, target;
 let axes0, axes1, axes2, axes3;
@@ -369,6 +374,7 @@ function init() {
       case 32: // space
         if (player.canJump === true) velocity.y += 300; //if canjump is true, jumps
         player.canJump = false; //sets canjump to false, to prevent double jumping
+<<<<<<< HEAD
         break;
       case 16: // shift
       sprinting = true;
@@ -376,6 +382,9 @@ function init() {
         moveSpeed = 600
       }
         break;  
+=======
+        break //just a test
+>>>>>>> 266115ca4bdf8853b8edd73ed3799fbea1c812c6
 
       case 82: // r
         reload();
