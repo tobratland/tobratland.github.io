@@ -4,7 +4,7 @@ import { models } from "./models.js";
 import { settings } from "./settings.js";
 import { weapons } from "./weapons.js";
 import { score } from "./challengeModeScore.js"
-
+//test
 let camera, scene, renderer, controls, loadingManager;
 let wallNorth, wallEast, wallSouth, wallWest, target
 let prevTime = performance.now();
