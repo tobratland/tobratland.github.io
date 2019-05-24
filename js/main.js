@@ -294,7 +294,7 @@ function init() {
       case 32: // space
         if (player.canJump === true) velocity.y += 300; //if canjump is true, jumps
         player.canJump = false; //sets canjump to false, to prevent double jumping
-        break;
+        break //just a test
 
       case 82: // r
         reload();
