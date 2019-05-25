@@ -148,17 +148,13 @@
       <div class="challenge">
         <h2>Challenge Mode</h2>
         <div id="difficulty">
-          <h4>Difficulty</h4>
+          <h4>Challenge Mode</h4>
           <select id="challengeDifficulty">
-            <option value="easy">Easy</option>
-            <option value="harder"
-              >Harder</option
-            >
-            <option value="reallyHard"
-              >Really hard</option
-            >
-            <option value="tooHard"
-              >Send help, too hard</option
+            <optgroup label="Available Modes">
+            <option value="easy">Bouncing Balls</option>
+            <optgroup label="Coming Modes"></optgroup>
+            <option value="reserved"
+              >Reserved for others</option
             >
           </select>
         </div>
@@ -204,7 +200,7 @@
             oninput="myRange.value=fovValue.value"
           />
         </div>
-        <div class="FOVslidecontainer">
+        <div id="mouseSens" class="FOVslidecontainer">
           <p>Mouse sensitivity</p>
           <input
             type="range"
@@ -223,6 +219,28 @@
             max="20"
             value="3.5"
             oninput="MouseSensRange.value=MouseSensNumber.value"
+          />
+        </div>
+        <div class="FOVslidecontainer" id="ps4Sens">
+          <p>Gamepad Sensitivity</p>
+          <input 
+            type="range" 
+            id="ps4SensSlider" 
+            step="1"
+            min="1"
+            max="8"
+            value="3"
+            class="slider"
+            oninput="ps4SensNumber.value=ps4SensSlider.value"
+            >
+        </br>
+          <input
+            type="number"
+            id="ps4SensNumber"
+            min="1"
+            max="8"
+            value="3"
+            oninput="ps4SensSlider.value=ps4SensNumber.value"
           />
         </div>
         <br />

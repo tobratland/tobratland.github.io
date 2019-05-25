@@ -3,13 +3,8 @@ import { player } from "./player.js";
 import { models } from "./models.js";
 import { settings } from "./settings.js";
 import { weapons } from "./weapons.js";
-<<<<<<< HEAD
 import { score } from "./challengeModeScore.js";
 
-=======
-import { score } from "./challengeModeScore.js"
-//test
->>>>>>> 266115ca4bdf8853b8edd73ed3799fbea1c812c6
 let camera, scene, renderer, controls, loadingManager;
 let wallNorth, wallEast, wallSouth, wallWest, target;
 let axes0, axes1, axes2, axes3;
@@ -48,6 +43,7 @@ let countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot;
 let shooting = false;
 let circleArray = [];
 let circle;
+let delta
 let moveSpeed = 400
 let mute = document.getElementById("mute");
 let muted = false;
@@ -66,6 +62,7 @@ let scoreReloaded = score.reloaded;
 let scoreWeapon = score.weapon;
 let crouching = false;
 let sprinting = false;
+let gamepadSens = document.getElementById("ps4SensNumber").value
 export let controllMode = "mouse";
 export let gamepads = {}
 export let gamepadConnected = false;
@@ -112,8 +109,10 @@ function init() {
     1000
   ); //sets the type of camera, size of the camera and min/max viewdistance. This is my eyes
   controls = new THREE.PointerLockControls(camera);
-
+  
   const blocker = document.getElementById("blocker");
+  const ps4SensSelector = document.getElementById("ps4Sens")
+  const mouseSenseSelector = document.getElementById("mouseSens")
   const playButton = document.getElementById("playButton");
   const challengeButton = document.getElementById("challengeButton");
   const controllerButtonGamePad = document.getElementById(
@@ -122,14 +121,20 @@ function init() {
   const controllerButtonMouse = document.getElementById(
     "controllerButtonMouse"
   );
+  
+  ps4SensSelector.style.visibility = "hidden"
   changeController();
   controllerButtonGamePad.addEventListener("click", function() {
     controllMode = "gamePad";
+    ps4SensSelector.style.visibility = "visible"
+    mouseSenseSelector.style.visibility = "hidden"
     console.log(controllMode);
     changeController();
   });
   controllerButtonMouse.addEventListener("click", function() {
     controllMode = "mouse";
+    ps4SensSelector.style.visibility = "hidden"
+    mouseSenseSelector.style.visibility = "visible"
     console.log(controllMode);
     changeController();
   });
@@ -173,6 +178,7 @@ function init() {
     function() {
       controls.lock();
       playMode = "training";
+      changeGamepadSens()
     },
     false
   );
@@ -182,11 +188,12 @@ function init() {
       controls.lock();
       playMode = "challenge";
       clearTargets();
+      changeGamepadSens()
       endScoreTime = 0;
       scoreShotsFired = 0;
       scoreReloaded = 0;
       scoreWeapon = selectedWeapon;
-
+      endScoreTime = 0;
       if ((targets = [])) {
         addMovingTargets();
       }
@@ -210,6 +217,7 @@ function init() {
     blocker.style.visibility = "hidden";
     crosshairCanvas.style.display = "block";
     hud.style.display = "block";
+    ps4SensSelector.style.visibility = "hidden"
     selectWeapon(); //selects weapon
     selectMagazine(); //selects magazinesize
     selectBarrelMod(); //selects barrelmod
@@ -227,6 +235,9 @@ function init() {
 
   controls.addEventListener("unlock", function() {
     blocker.style.visibility = "visible";
+    if(playMode = "gamepad") {
+      ps4SensSelector.style.visibility = "visible"
+    }
     crosshairCanvas.style.display = "none";
     hud.style.display = "none";
     player.canShoot = false;
@@ -372,19 +383,9 @@ function init() {
         moveRight = true;
         break;
       case 32: // space
-        if (player.canJump === true) velocity.y += 300; //if canjump is true, jumps
+        if (player.canJump === true) jump() //if canjump is true, jumps
         player.canJump = false; //sets canjump to false, to prevent double jumping
-<<<<<<< HEAD
-        break;
-      case 16: // shift
-      sprinting = true;
-      if(!crouching) {
-        moveSpeed = 600
-      }
-        break;  
-=======
         break //just a test
->>>>>>> 266115ca4bdf8853b8edd73ed3799fbea1c812c6
 
       case 82: // r
         reload();
@@ -430,33 +431,13 @@ function init() {
     bulletNumber = 0;
     changeCountdownToShot();
   };
-  const reload = function() {
-    if (bulletsLeft === 0 && playMode === "challenge") {
-      reloadTime =
-        weapons.apexLegends[selectedWeapon].reloadTime.empty[selectedMagazine];
-    } else if (bulletsLeft > 0 && playMode === "challenge") {
-      reloadTime =
-        weapons.apexLegends[selectedWeapon].reloadTime.loaded[selectedMagazine];
-    } else {
-      reloadTime = 0;
-    }
-    if (playMode === "challenge") {
-      scoreReloaded++;
-    }
-    shootingAudio.stop();
-    playingShootingAudio = false;
-    console.log(reloadTime);
-    bulletNumber = 0;
-    bulletsLeft =
-      weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
-
-    changeCountdownToShot();
-  };
+  
 
   document.addEventListener("keydown", onKeyDown, false);
   document.addEventListener("keyup", onKeyUp, false);
   window.addEventListener("mousedown", onMouseDown, false);
   window.addEventListener("mouseup", onMouseUp, false);
+  
 
   createPlayer();
 } //end of init
@@ -480,6 +461,10 @@ function clearTargets() {
     });
   }
 }
+function jump() {
+  velocity.y += 300;
+}
+
 function clearMisses() {
   for (let i = 0; i < circleArray.length; i++) {
     let m = scene.getObjectByName("miss");
@@ -487,6 +472,27 @@ function clearMisses() {
   }
   circleArray = [];
 }
+function reload() {
+  if (bulletsLeft === 0 && playMode === "challenge") {
+    reloadTime =
+      weapons.apexLegends[selectedWeapon].reloadTime.empty[selectedMagazine];
+  } else if (bulletsLeft > 0 && playMode === "challenge") {
+    reloadTime =
+      weapons.apexLegends[selectedWeapon].reloadTime.loaded[selectedMagazine];
+  } else {
+    reloadTime = 0;
+  }
+  if (playMode === "challenge") {
+    scoreReloaded++;
+  }
+  shootingAudio.stop();
+  playingShootingAudio = false;
+  bulletNumber = 0;
+  bulletsLeft =
+    weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
+
+  changeCountdownToShot();
+};
 function changeController() {
   if (controllMode === "gamePad") {
     controllerButtonGamePad.style.backgroundColor = "green";
@@ -554,9 +560,9 @@ function addMovingTargets() {
     collidableMeshList.push(target);
     target.name = "target" + i;
     target.hits = [];
-    target.speedX = randomNumberinRange(-0.7, 0.7);
-    target.speedY = randomNumberinRange(-0.7, 0.7);
-    target.speedZ = randomNumberinRange(-0.7, 0.7);
+    target.speedX = randomNumberinRange(-0.7, 0.7) * delta;
+    target.speedY = randomNumberinRange(-0.7, 0.7) * delta;
+    target.speedZ = randomNumberinRange(-0.7, 0.7) * delta;
     targets.push(target);
   }
 }
@@ -573,6 +579,9 @@ function selectMagazine() {
 function changeFov() {
   camera.fov = document.getElementById("fovValue").value;
   camera.updateProjectionMatrix();
+}
+function changeGamepadSens() {
+  gamepadSens = document.getElementById("ps4SensNumber").value
 }
 function updateAudio() {
   shootingAudio = new Howl({
@@ -650,7 +659,7 @@ function shoot() {
   circle.material.side = THREE.DoubleSide;
   rayCaster.set(controls.getObject().position, cameraDirection);
   let intersects = rayCaster.intersectObjects(collidableMeshList);
-
+  shooting = true;
   shotPosition = intersects[0].point;
   scene.add(circle);
   for (let i = 0; i < targets.length; i++) {
@@ -728,36 +737,57 @@ function animate() {
   requestAnimationFrame(animate);
   let timeToAnimate = performance.now(); //gives metric to measure the time from start of animation, to end.
   let time = performance.now();
-  let delta = (time - prevTime) / 1000;
+  delta = (time - prevTime) / 1000;
   if(controllMode === "gamePad" && gamepadConnected) {
     gamepads = navigator.getGamepads();
     axes0 = gamepads[0].axes[0]
     axes1 = gamepads[0].axes[1]
     axes2 = gamepads[0].axes[2]
     axes3 = gamepads[0].axes[3]
-    controls.getObject().rotation.y -= axes2.toFixed(1) * 0.005 * settings.sens
-    controls.getPitch().rotation.x -= axes3.toFixed(1) * 0.005 * settings.sens
-    
+    controls.getObject().rotation.y -= axes2.toFixed(1) * 0.005 * gamepadSens * 6 //max 8 step, step 1 = 6 og step 2 = 12
+    controls.getPitch().rotation.x -= axes3.toFixed(1) * 0.005 * gamepadSens * 6
+    if(axes1.toFixed(1) == 0 ) {
+     moveBackward = false;
+     moveForward = false; 
+    } else if( axes1.toFixed(1) > 0) {
+      moveBackward = axes1
+    } else if( axes1.toFixed(1) < 0) {
+      moveForward = -axes1
+    }
+    if(axes0.toFixed(1) == 0 ) {
+      moveLeft = false;
+      moveRight = false; 
+     } else if( axes1.toFixed(1) > 0) {
+       moveRight = axes0
+     } else if( axes1.toFixed(1) < 0) {
+       moveLeft = -axes0
+     }
+     if(player.canJump && gamepads[0].buttons[0].pressed) {
+       jump()
+       player.canJump = false;
+     }
+     if(gamepads[0].buttons[2].pressed) [
+       reload()
+     ]
   }
-  
   for (let i = 0; i < targets.length; i++) {
     if (targets[i].position.y >= 50) {
-      targets[i].speedY = randomNumberinRange(-0.3, -0.8);
+      targets[i].speedY = - (targets[i].speedY);
     }
     if (targets[i].position.y <= 5) {
-      targets[i].speedY = randomNumberinRange(0.3, 0.8);
+      targets[i].speedY = - (targets[i].speedY);
     }
     if (targets[i].position.x >= 125) {
-      targets[i].speedX = randomNumberinRange(-0.3, -0.8);
+      targets[i].speedX = - (targets[i].speedX);
     }
     if (targets[i].position.x <= -125) {
-      targets[i].speedX = randomNumberinRange(0.3, 0.8);
+      targets[i].speedX = - (targets[i].speedX);
     }
     if (targets[i].position.z >= 125) {
-      targets[i].speedZ = randomNumberinRange(-0.3, -0.8);
+      targets[i].speedZ = - (targets[i].speedZ);
     }
     if (targets[i].position.z <= -125) {
-      targets[i].speedZ = randomNumberinRange(0.3, 0.8);
+      targets[i].speedZ = - (targets[i].speedZ);
     }
   }
 
@@ -810,6 +840,7 @@ function animate() {
     );
 
     //checks for attempt to move
+    
     if (moveForward || moveBackward) velocity.z -= direction.z * moveSpeed * delta;
     if (moveLeft || moveRight) velocity.x -= direction.x * moveSpeed * delta;
 
@@ -832,7 +863,8 @@ function animate() {
       controls.getObject().translateZ(velocity.z * delta);
     }
 
-    //for updating bullets left in hud
+    //for updating bullets left in hud(extract into function)
+    
     document.getElementById("bulletsLeft").innerHTML = bulletsLeft;
     document.getElementById("totalbullets").innerHTML =
       weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
@@ -868,16 +900,19 @@ function animate() {
         playingShootingAudio = true;
       }
     }
+   
     // call shoot to shoot bullets
     if(gamepads.length > 0) {
+      
       if (
-        (gamepads[0].buttons[7].pressed) &&
+        gamepads[0].buttons[7].pressed &&
         countdownToShot <= 0 &&
         bulletsLeft > 0 &&
         reloadTime <= 0.1
       ) {
+        shooting = true;
         shoot();
-      }
+      } 
     }else if (
       mouseDown &&
       countdownToShot <= 0 &&
@@ -886,6 +921,7 @@ function animate() {
     ) {
       shoot();
     }
+
     if (destroyedTargets >= numberOftargets) {
       destroyedTargets = 0;
       targets = [];
@@ -905,6 +941,11 @@ function animate() {
       endScoreTime += delta + timeToAnimate;
     }
   } //end of movement + jumping
+  if(gamepads.length > 0) {
+    if(gamepads[0].buttons[7].pressed == false && shooting == true) {
+      shooting = true;
+    }
+  } 
   
   renderer.render(scene, camera);
 } //end of animate
