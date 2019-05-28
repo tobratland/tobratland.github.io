@@ -235,7 +235,7 @@ function init() {
 
   controls.addEventListener("unlock", function() {
     blocker.style.visibility = "visible";
-    if(playMode = "gamepad") {
+    if(controllMode == "gamepad") {
       ps4SensSelector.style.visibility = "visible"
     }
     crosshairCanvas.style.display = "none";
