@@ -11,24 +11,45 @@
   background-color: rgb(26, 26, 29, 0.9);
   color: white;
 }
+#startPage {
+  position: absolute;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(26, 26, 29, 0.9);
+  color: white;
+}
 #warning {
   color: lightcoral;
 }
 .grid-container {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-rows: 0.7fr 1fr 1fr 1fr 1fr 1fr 1fr;
     grid-template-areas: 
       "beer beer logo about about" 
-      "world world play weapon weapon" 
-      "world world clear weapon weapon" 
+      "controller controller controller controller controller" 
+      "challenge challenge play weapon weapon" 
+      "challenge challenge clear weapon weapon" 
       "contact contact settings instructions instructions" 
       "contact contact settings instructions instructions"
       "footer footer footer footer footer";
   }
   
-  .world { 
-    grid-area: world; 
+  .controller { 
+    grid-area: controller; 
+    justify-self: center;
+    align-self: center;  
+  }
+  .controllerButtons { 
+    grid-area: controller; 
+    justify-self: center;
+    align-self: center; 
+    display: inline-flex; 
+  }
+
+  .challenge { 
+    grid-area: challenge; 
     justify-self: center;
     align-self: center;  
     
@@ -118,7 +139,7 @@
   }
 
 
-#playButton {
+.button {
   background-color: black;
   -moz-border-radius:28px;
   -webkit-border-radius:28px;
@@ -133,13 +154,14 @@
   text-decoration:none;
   text-shadow: none;
 }
-#playButton:hover {
+.button:hover {
   background-color: #1a1a1d;
 }
-#playButton:active {
+.button:active {
     position:relative;
     top:1px;
 }
+
 #acceptCookies {
   background-color: Green;
   -moz-border-radius:10px;
@@ -280,4 +302,5 @@
       white-space: nowrap;
       display: inline;
       font-weight: bold;
+
   }

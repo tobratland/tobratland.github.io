@@ -3,9 +3,11 @@ import { player } from "./player.js";
 import { models } from "./models.js";
 import { settings } from "./settings.js";
 import { weapons } from "./weapons.js";
+import { score } from "./challengeModeScore.js";
 
 let camera, scene, renderer, controls, loadingManager;
-let wallNorth, wallEast, wallSouth, wallWest;
+let wallNorth, wallEast, wallSouth, wallWest, target;
+let axes0, axes1, axes2, axes3;
 let prevTime = performance.now();
 let direction = new THREE.Vector3();
 let moveForward = false;
@@ -17,6 +19,7 @@ let RESOURCES_LOADED = false;
 let velocity = new THREE.Vector3();
 const USE_WIREFRAME = false;
 let playerMesh;
+let groundlevel = 10
 let hud = document.getElementById("hud");
 let meshes = {};
 let weaponSelector = document.getElementById("weaponSelector");
@@ -26,18 +29,22 @@ let clearBulletsButton = document.getElementById("clearBulletsButton");
 let selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value;
 let selectedMagazine =
   magazineSelector.options[magazineSelector.selectedIndex].value;
+let reloadTime = 0;
 let selectedBarrelAttachment =
   barrelAttachmentSelector.options[barrelAttachmentSelector.selectedIndex]
     .value;
 let bulletsLeft =
   weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
 var collidableMeshList = [];
+let destroyedTargets = 0;
 let recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
 let bulletNumber = 0;
 let countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot;
 let shooting = false;
 let circleArray = [];
 let circle;
+let delta
+let moveSpeed = 400
 let mute = document.getElementById("mute");
 let muted = false;
 //Cookies
@@ -45,6 +52,21 @@ let consentedToCookies;
 let cookieConsentButton = document.getElementById("acceptCookies");
 let cookieRejectionButton = document.getElementById("rejectCookies");
 let privacyBlocker = document.getElementById("privacy");
+let targets = [];
+let numberOftargets = 6;
+let scoreTime = score.time;
+let startScoreTime = 0;
+let endScoreTime = 0;
+let scoreShotsFired = score.shotsFired;
+let scoreReloaded = score.reloaded;
+let scoreWeapon = score.weapon;
+let crouching = false;
+let sprinting = false;
+let gamepadSens = document.getElementById("ps4SensNumber").value
+export let controllMode = "mouse";
+export let gamepads = {}
+export let gamepadConnected = false;
+let playMode = "training";
 let shootingAudio = new Howl({
   src: [
     "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".mp3",
@@ -52,6 +74,7 @@ let shootingAudio = new Howl({
   ]
 });
 let playingShootingAudio = false;
+
 if (localStorage.getItem("consentedToCookies") != null) {
   consentedToCookies = localStorage.getItem("consentedToCookies");
   console.log(consentedToCookies);
@@ -71,13 +94,9 @@ crosshairCtx.strokeStyle = "#39ff14";
 crosshairCtx.fillStyle = "#39ff14";
 crosshairCtx.lineWidth = 2;
 crosshairCanvas.style.display = "none";
-hud.style.display = "none"
+hud.style.display = "none";
 crosshairCtx.clearRect(0, 0, 30, 30);
 crosshairCtx.fillRect(13, 13, 4, 4);
-
-var raycaster = new THREE.Raycaster();
-var rayDirection = new THREE.Vector3(0, 0, -1);
-var rayRotation = new THREE.Euler(0, 0, 0, "YXZ");
 
 init();
 animate();
@@ -90,11 +109,35 @@ function init() {
     1000
   ); //sets the type of camera, size of the camera and min/max viewdistance. This is my eyes
   controls = new THREE.PointerLockControls(camera);
-
-  const blocker = document.getElementById("blocker"); //defines up the blocker element from the document
-  const instructions = document.getElementById("settingsPage"); // defines up the instructions element from the document
-  const instructionButton = document.getElementById("playButton");
-
+  
+  const blocker = document.getElementById("blocker");
+  const ps4SensSelector = document.getElementById("ps4Sens")
+  const mouseSenseSelector = document.getElementById("mouseSens")
+  const playButton = document.getElementById("playButton");
+  const challengeButton = document.getElementById("challengeButton");
+  const controllerButtonGamePad = document.getElementById(
+    "controllerButtonGamePad"
+  );
+  const controllerButtonMouse = document.getElementById(
+    "controllerButtonMouse"
+  );
+  
+  ps4SensSelector.style.visibility = "hidden"
+  changeController();
+  controllerButtonGamePad.addEventListener("click", function() {
+    controllMode = "gamePad";
+    ps4SensSelector.style.visibility = "visible"
+    mouseSenseSelector.style.visibility = "hidden"
+    console.log(controllMode);
+    changeController();
+  });
+  controllerButtonMouse.addEventListener("click", function() {
+    controllMode = "mouse";
+    ps4SensSelector.style.visibility = "hidden"
+    mouseSenseSelector.style.visibility = "visible"
+    console.log(controllMode);
+    changeController();
+  });
   //create the scene
   scene = new THREE.Scene();
   scene.background = new THREE.Color(world.colorOfWorld); //sets the scene backgroundcolor
@@ -129,11 +172,31 @@ function init() {
     localStorage.setItem("consentedToCookies", false);
   });
 
-  //add eventlisteners to the instructions to make click lock controls and adds eventlisteners to the controls to lock/unlock pointerlock
-  instructionButton.addEventListener(
+  //add eventlisteners to the playbutton to make click lock controls and adds eventlisteners to the controls to lock/unlock pointerlock
+  playButton.addEventListener(
     "click",
     function() {
       controls.lock();
+      playMode = "training";
+      changeGamepadSens()
+    },
+    false
+  );
+  challengeButton.addEventListener(
+    "click",
+    function() {
+      controls.lock();
+      playMode = "challenge";
+      clearTargets();
+      changeGamepadSens()
+      endScoreTime = 0;
+      scoreShotsFired = 0;
+      scoreReloaded = 0;
+      scoreWeapon = selectedWeapon;
+      endScoreTime = 0;
+      if ((targets = [])) {
+        addMovingTargets();
+      }
     },
     false
   );
@@ -141,7 +204,11 @@ function init() {
     "click",
     function() {
       //removes hits from scene.
-      clearBullets();
+      for (let i = 0; i < targets.length; i++) {
+        clearHits(targets[i]);
+      }
+      clearMisses();
+      clearTargets();
     },
     false
   );
@@ -150,6 +217,7 @@ function init() {
     blocker.style.visibility = "hidden";
     crosshairCanvas.style.display = "block";
     hud.style.display = "block";
+    ps4SensSelector.style.visibility = "hidden"
     selectWeapon(); //selects weapon
     selectMagazine(); //selects magazinesize
     selectBarrelMod(); //selects barrelmod
@@ -167,9 +235,16 @@ function init() {
 
   controls.addEventListener("unlock", function() {
     blocker.style.visibility = "visible";
+    if(playMode = "gamepad") {
+      ps4SensSelector.style.visibility = "visible"
+    }
     crosshairCanvas.style.display = "none";
     hud.style.display = "none";
     player.canShoot = false;
+    if (playMode === "challenge") {
+      scoreTime = (endScoreTime - startScoreTime).toFixed(3) + " seconds";
+      updateScore();
+    }
   });
 
   //for loading models
@@ -208,10 +283,17 @@ function init() {
     new THREE.PlaneGeometry(250, 250, 20, 20), // width, height, widthSegments, heightsegments
     new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: USE_WIREFRAME })
   );
+  const roof = new THREE.Mesh( //creates floor
+    new THREE.PlaneGeometry(250, 250, 20, 20), // width, height, widthSegments, heightsegments
+    new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: USE_WIREFRAME })
+  );
   floor.rotation.x -= Math.PI / 2; //rotates the floor so it actually is on the floor
   floor.receiveShadow = true; //allows the floor to receive shadows
   scene.add(floor); //adds the floor to the scene
-
+  roof.rotation.x -= Math.PI / 2; //rotates the roof so it actually is on the roof
+  roof.position.y = 100;
+  roof.material.side = THREE.DoubleSide;
+  scene.add(roof); //adds the roof to the scene
   //walls
   const wallheight = world.MAP_HEIGHT; //sets wall atributes from world.js
   const wallwidth = world.MAP_SIZE; //sets wall atributes from world.js
@@ -226,21 +308,29 @@ function init() {
   wallEast = new THREE.Mesh(geometry, material);
   wallWest = new THREE.Mesh(geometry, material);
   scene.add(wallNorth, wallSouth, wallEast, wallWest); //Adds walls to scene
-  collidableMeshList.push(wallNorth, wallSouth, wallEast, wallWest);
+  collidableMeshList.push(
+    wallNorth,
+    wallSouth,
+    wallEast,
+    wallWest,
+    floor,
+    roof
+  );
 
   //targets
-  var target1Geometry = new THREE.CircleGeometry(4, 16);
-  var target1Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
-  var target1 = new THREE.Mesh(target1Geometry, target1Material);
-  var target2Geometry = new THREE.CircleGeometry(6, 16);
-  var target2Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
-  var target2 = new THREE.Mesh(target2Geometry, target2Material);
-  var target3Geometry = new THREE.CircleGeometry(10, 16);
-  var target3Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
-  var target3 = new THREE.Mesh(target3Geometry, target3Material);
+  let target1Geometry = new THREE.CircleGeometry(4, 16);
+  let target1Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
+  let target1 = new THREE.Mesh(target1Geometry, target1Material);
+  let target2Geometry = new THREE.CircleGeometry(6, 16);
+  let target2Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
+  let target2 = new THREE.Mesh(target2Geometry, target2Material);
+  let target3Geometry = new THREE.CircleGeometry(10, 16);
+  let target3Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
+  let target3 = new THREE.Mesh(target3Geometry, target3Material);
   scene.add(target1);
   scene.add(target2);
   scene.add(target3);
+
   target1.position.z -= 124.99;
   target1.position.y += 15;
   target1.position.x += 18;
@@ -277,6 +367,7 @@ function init() {
     switch (event.keyCode) {
       case 38: // up
       case 87: // w
+        
         moveForward = true;
         break;
       case 37: // left
@@ -292,9 +383,9 @@ function init() {
         moveRight = true;
         break;
       case 32: // space
-        if (player.canJump === true) velocity.y += 300; //if canjump is true, jumps
+        if (player.canJump === true) jump() //if canjump is true, jumps
         player.canJump = false; //sets canjump to false, to prevent double jumping
-        break;
+        break //just a test
 
       case 82: // r
         reload();
@@ -319,6 +410,10 @@ function init() {
       case 68: // d
         moveRight = false;
         break;
+      case 16: // shift
+        sprinting = false;
+        moveSpeed = 400
+        break;  
     }
   };
   const onMouseDown = function() {
@@ -326,7 +421,6 @@ function init() {
             startGunRotationY =  controls.getObject().rotation.y */
     mouseDown = true;
     shooting = true;
-   
   };
 
   const onMouseUp = function() {
@@ -337,17 +431,13 @@ function init() {
     bulletNumber = 0;
     changeCountdownToShot();
   };
-  const reload = function() {
-    bulletNumber = 0;
-    bulletsLeft =
-      weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
-    changeCountdownToShot();
-  };
+  
 
   document.addEventListener("keydown", onKeyDown, false);
   document.addEventListener("keyup", onKeyUp, false);
   window.addEventListener("mousedown", onMouseDown, false);
   window.addEventListener("mouseup", onMouseUp, false);
+  
 
   createPlayer();
 } //end of init
@@ -355,15 +445,126 @@ function changeCountdownToShot() {
   countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot;
 }
 
-function clearBullets() {
+function clearHits(target) {
+  for (let i = 0; i < target.hits.length; i++) {
+    scene.remove(target.hits[i]);
+  }
+  target.hits = [];
+}
+function clearTargets() {
+  for (let i = 0; i < targets.length; i++) {
+    let selectedObject = scene.getObjectByName(targets[i].name);
+    scene.remove(selectedObject);
+    clearHits(targets[i]);
+    collidableMeshList = collidableMeshList.filter(function(obj) {
+      return obj.name != targets[i].name;
+    });
+  }
+}
+function jump() {
+  velocity.y += 300;
+}
+
+function clearMisses() {
   for (let i = 0; i < circleArray.length; i++) {
-    let o = scene.getObjectByName("hit");
-    scene.remove(o);
+    let m = scene.getObjectByName("miss");
+    scene.remove(m);
   }
   circleArray = [];
 }
+function reload() {
+  if (bulletsLeft === 0 && playMode === "challenge") {
+    reloadTime =
+      weapons.apexLegends[selectedWeapon].reloadTime.empty[selectedMagazine];
+  } else if (bulletsLeft > 0 && playMode === "challenge") {
+    reloadTime =
+      weapons.apexLegends[selectedWeapon].reloadTime.loaded[selectedMagazine];
+  } else {
+    reloadTime = 0;
+  }
+  if (playMode === "challenge") {
+    scoreReloaded++;
+  }
+  shootingAudio.stop();
+  playingShootingAudio = false;
+  bulletNumber = 0;
+  bulletsLeft =
+    weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
+
+  changeCountdownToShot();
+};
+function changeController() {
+  if (controllMode === "gamePad") {
+    controllerButtonGamePad.style.backgroundColor = "green";
+    controllerButtonGamePad.style.color = "white";
+    controllerButtonGamePad.style.textDecoration = "none";
+    controllerButtonMouse.style.backgroundColor = "red";
+    controllerButtonMouse.style.textDecoration = "line-through";
+    controllerButtonMouse.style.color = "grey";
+
+    window.addEventListener(
+      "gamepadconnected",
+      function(e) {
+        gamepadHandler(e, true);
+        gamepadConnected = true
+      },
+      false
+    );
+
+    window.addEventListener(
+      "gamepaddisconnected",
+      function(e) {
+        gamepadHandler(e, false);
+        gamepadConnected = false
+      },
+      false
+    );
+  } else if (controllMode === "mouse") {
+    controllerButtonMouse.style.backgroundColor = "green";
+    controllerButtonMouse.style.color = "white";
+    controllerButtonMouse.style.textDecoration = "none";
+    controllerButtonGamePad.style.backgroundColor = "red";
+    controllerButtonGamePad.style.textDecoration = "line-through";
+    controllerButtonGamePad.style.color = "grey";
+  }
+}
 function selectWeapon() {
   selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value;
+}
+function gamepadHandler(event, connecting) {
+  var gamepad = event.gamepad;
+
+  if (connecting) {
+    gamepads[gamepad.index] = gamepad;
+  } else {
+    delete gamepads[gamepad.index];
+  }
+}
+function addMovingTargets() {
+  for (let i = 0; i < numberOftargets; i++) {
+    let targetgeometry = new THREE.SphereGeometry(
+      randomNumberinRange(3, 6),
+      32,
+      32
+    );
+    target = new THREE.Mesh(
+      targetgeometry,
+      new THREE.MeshLambertMaterial({ color: 0xffff00f })
+    );
+    target.position.x = randomNumberinRange(-125, 125);
+    target.position.y = randomNumberinRange(0, 50);
+    target.position.z = randomNumberinRange(-125, 125);
+
+    target.castShadow = true;
+    scene.add(target);
+    collidableMeshList.push(target);
+    target.name = "target" + i;
+    target.hits = [];
+    target.speedX = randomNumberinRange(-0.7, 0.7) * delta;
+    target.speedY = randomNumberinRange(-0.7, 0.7) * delta;
+    target.speedZ = randomNumberinRange(-0.7, 0.7) * delta;
+    targets.push(target);
+  }
 }
 function selectBarrelMod() {
   selectedBarrelAttachment =
@@ -379,27 +580,49 @@ function changeFov() {
   camera.fov = document.getElementById("fovValue").value;
   camera.updateProjectionMatrix();
 }
+function changeGamepadSens() {
+  gamepadSens = document.getElementById("ps4SensNumber").value
+}
 function updateAudio() {
   shootingAudio = new Howl({
     src: [
       "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".mp3",
       "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".ogg"
     ]
-  })
+  });
 }
 function changeMouseSensitivity() {
   settings.sens = document.getElementById("MouseSensNumber").value;
   camera.updateProjectionMatrix();
 }
+
+function updateScore() {
+  if (destroyedTargets == targets.length) {
+    document.getElementById("defeatedTargets").innerHTML =
+      "You destroyed all of the targets, good job friend!";
+  } else {
+    document.getElementById("defeatedTargets").innerHTML =
+      "You only got " +
+      destroyedTargets +
+      " out of " +
+      targets.length +
+      " targets, not good!";
+  }
+
+  document.getElementById("timeUsed").innerHTML = "Time used: " + scoreTime;
+  document.getElementById("shotsFired").innerHTML =
+    "Shots Fired: " + scoreShotsFired;
+  document.getElementById("reloadedTimes").innerHTML =
+    "Amount of times you reloaded: " + scoreReloaded;
+  document.getElementById("weaponSelected").innerHTML =
+    "Weapon used: " + scoreWeapon;
+}
 function updateMute() {
   mute = document.getElementById("mute").checked;
-  console.log(mute)
-  if(mute) {
-    muted = true;
-  } else {
-    muted = false;
-  }
+
+  mute === true ? (muted = true) : (muted = false); //trying shorthand if
 }
+
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -422,11 +645,183 @@ function randomNumberinRange(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function shoot() {
+  //handles everything that happens when the player shoots except for sound
+  let shotPosition = new THREE.Vector3();
+  const cameraDirection = controls
+    .getDirection(new THREE.Vector3(0, 0, 0))
+    .normalize()
+    .clone();
+  let rayCaster = new THREE.Raycaster();
+  let hitGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+  let hitMateral = new THREE.MeshBasicMaterial({ color: 0x0e0909 });
+  circle = new THREE.Mesh(hitGeometry, hitMateral);
+  circle.material.side = THREE.DoubleSide;
+  rayCaster.set(controls.getObject().position, cameraDirection);
+  let intersects = rayCaster.intersectObjects(collidableMeshList);
+  shooting = true;
+  shotPosition = intersects[0].point;
+  scene.add(circle);
+  for (let i = 0; i < targets.length; i++) {
+    if (intersects[0].object.name == "target" + [i]) {
+      targets[i].hits.push(circle);
+      circle.name = "hit";
+    } else {
+      circle.name = "miss";
+    }
+  }
+
+  circleArray.push(circle);
+
+  circle.position.set(shotPosition.x, shotPosition.y, shotPosition.z);
+
+  countdownToShot =
+    weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t;
+  let recoilXMin;
+  let recoilXMax;
+  let recoilYMin;
+  let recoilYMax;
+  //controlling recoil
+  if (
+    selectedBarrelAttachment === "barrelExtensionLevelOne" &&
+    selectedWeapon != "flatline" &&
+    selectedWeapon != "havocNoTurbo" &&
+    selectedWeapon != "havocTurbo"
+  ) {
+    recoilXMin = recoilPattern[bulletNumber].xMin * 0.9;
+    recoilXMax = recoilPattern[bulletNumber].xMax * 0.9;
+    recoilYMin = recoilPattern[bulletNumber].yMin * 0.9;
+    recoilYMax = recoilPattern[bulletNumber].yMax * 0.9;
+  } else if (
+    selectedBarrelAttachment === "barrelExtensionLevelTwo" &&
+    selectedWeapon != "flatline" &&
+    selectedWeapon != "havocNoTurbo" &&
+    selectedWeapon != "havocTurbo"
+  ) {
+    recoilXMin = recoilPattern[bulletNumber].xMin * 0.85;
+    recoilXMax = recoilPattern[bulletNumber].xMax * 0.85;
+    recoilYMin = recoilPattern[bulletNumber].yMin * 0.85;
+    recoilYMax = recoilPattern[bulletNumber].yMax * 0.85;
+  } else if (
+    selectedBarrelAttachment === "barrelExtensionLevelThree" &&
+    selectedWeapon != "flatline" &&
+    selectedWeapon != "havocNoTurbo" &&
+    selectedWeapon != "havocTurbo"
+  ) {
+    recoilXMin = recoilPattern[bulletNumber].xMin * 0.8;
+    recoilXMax = recoilPattern[bulletNumber].xMax * 0.8;
+    recoilYMin = recoilPattern[bulletNumber].yMin * 0.8;
+    recoilYMax = recoilPattern[bulletNumber].yMax * 0.8;
+  } else {
+    recoilXMin = recoilPattern[bulletNumber].xMin;
+    recoilXMax = recoilPattern[bulletNumber].xMax;
+    recoilYMin = recoilPattern[bulletNumber].yMin;
+    recoilYMax = recoilPattern[bulletNumber].yMax;
+  }
+
+  controls.getObject().children[0].rotation.x =
+    controls.getObject().children[0].rotation.x +
+    randomNumberinRange(recoilYMin, recoilYMax) * 0.0003;
+  controls.getObject().rotation.y =
+    controls.getObject().rotation.y +
+    randomNumberinRange(recoilXMin, recoilXMax) * 0.0003;
+
+  bulletNumber++;
+  bulletsLeft--;
+  if (playMode === "challenge") {
+    scoreShotsFired++;
+  }
+}
+
 function animate() {
   requestAnimationFrame(animate);
   let timeToAnimate = performance.now(); //gives metric to measure the time from start of animation, to end.
   let time = performance.now();
-  let delta = (time - prevTime) / 1000;
+  delta = (time - prevTime) / 1000;
+  if(controllMode === "gamePad" && gamepadConnected) {
+    gamepads = navigator.getGamepads();
+    axes0 = gamepads[0].axes[0]
+    axes1 = gamepads[0].axes[1]
+    axes2 = gamepads[0].axes[2]
+    axes3 = gamepads[0].axes[3]
+    controls.getObject().rotation.y -= axes2.toFixed(1) * 0.005 * gamepadSens * 6 //max 8 step, step 1 = 6 og step 2 = 12
+    controls.getPitch().rotation.x -= axes3.toFixed(1) * 0.005 * gamepadSens * 6
+    if(axes1.toFixed(1) == 0 ) {
+     moveBackward = false;
+     moveForward = false; 
+    } else if( axes1.toFixed(1) > 0) {
+      moveBackward = axes1
+    } else if( axes1.toFixed(1) < 0) {
+      moveForward = -axes1
+    }
+    if(axes0.toFixed(1) == 0 ) {
+      moveLeft = false;
+      moveRight = false; 
+     } else if( axes1.toFixed(1) > 0) {
+       moveRight = axes0
+     } else if( axes1.toFixed(1) < 0) {
+       moveLeft = -axes0
+     }
+     if(player.canJump && gamepads[0].buttons[0].pressed) {
+       jump()
+       player.canJump = false;
+     }
+     if(gamepads[0].buttons[2].pressed) [
+       reload()
+     ]
+  }
+  for (let i = 0; i < targets.length; i++) {
+    if (targets[i].position.y >= 50) {
+      targets[i].speedY = - (targets[i].speedY);
+    }
+    if (targets[i].position.y <= 5) {
+      targets[i].speedY = - (targets[i].speedY);
+    }
+    if (targets[i].position.x >= 125) {
+      targets[i].speedX = - (targets[i].speedX);
+    }
+    if (targets[i].position.x <= -125) {
+      targets[i].speedX = - (targets[i].speedX);
+    }
+    if (targets[i].position.z >= 125) {
+      targets[i].speedZ = - (targets[i].speedZ);
+    }
+    if (targets[i].position.z <= -125) {
+      targets[i].speedZ = - (targets[i].speedZ);
+    }
+  }
+
+  for (let i = 0; i < targets.length; i++) {
+    //Moves hits with targets
+    if (targets[i].hits.length > 0) {
+      for (let j = 0; j < targets[i].hits.length; j++) {
+        targets[i].hits[j].position.x += targets[i].speedX;
+        targets[i].hits[j].position.y += targets[i].speedY;
+        targets[i].hits[j].position.z += targets[i].speedZ;
+      }
+      if (targets[i].hits.length > 1) {
+        targets[i].material.color.setHex(0xfffff);
+      }
+      if (targets[i].hits.length > 3) {
+        targets[i].material.color.setHex(0xff0000);
+      }
+      if (targets[i].hits.length > 5) {
+        let selectedObject = scene.getObjectByName(targets[i].name);
+        scene.remove(selectedObject);
+        clearHits(targets[i]);
+        collidableMeshList = collidableMeshList.filter(function(obj) {
+          return obj.name != targets[i].name;
+        });
+        destroyedTargets++;
+      }
+    }
+  }
+
+  for (let i = 0; i < targets.length; i++) {
+    targets[i].position.x += targets[i].speedX;
+    targets[i].position.y += targets[i].speedY;
+    targets[i].position.z += targets[i].speedZ;
+  }
 
   /* shooting, movement including jumping */
   if (controls.isLocked === true) {
@@ -445,8 +840,9 @@ function animate() {
     );
 
     //checks for attempt to move
-    if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+    
+    if (moveForward || moveBackward) velocity.z -= direction.z * moveSpeed * delta;
+    if (moveLeft || moveRight) velocity.x -= direction.x * moveSpeed * delta;
 
     /* movement and collision for player in all directions */
     if (controls.getObject().position.z > world.MAP_SIZE / 2 - 2) {
@@ -467,148 +863,69 @@ function animate() {
       controls.getObject().translateZ(velocity.z * delta);
     }
 
-    //for updating bullets left in hud 
-    document.getElementById("bulletsLeft").innerHTML = bulletsLeft; 
-    document.getElementById("totalbullets").innerHTML = weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
-    //can the player jump and sets the player on ground while not jumping.
-    if (controls.getObject().position.y < 10) {
-      velocity.y = 0;
-      controls.getObject().position.y = 10;
-      player.canJump = true;
+    //for updating bullets left in hud(extract into function)
+    
+    document.getElementById("bulletsLeft").innerHTML = bulletsLeft;
+    document.getElementById("totalbullets").innerHTML =
+      weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
+    if (reloadTime > 0.1) {
+      document.getElementById("bulletsLeft").innerHTML = "RELOADING";
+    } else {
+      document.getElementById("bulletsLeft").innerHTML = bulletsLeft;
     }
-    if(bulletsLeft <= 0){
+    //can the player jump and sets the player on ground while not jumping.
+    if (controls.getObject().position.y <= groundlevel) {
+      velocity.y = 0;
+      controls.getObject().position.y = groundlevel;
+      if(controls.getObject().position.y < 6) {
+      player.canJump = false;
+      } else {
+        player.canJump = true;
+      }
+    }
+    if (bulletsLeft <= 0) {
       shootingAudio.stop();
       playingShootingAudio = false;
     }
-    /* shooting */
-    if(mouseDown && !playingShootingAudio && bulletsLeft > 0){
-      if(!muted) {
-      shootingAudio.play();
-      playingShootingAudio = true;
-      }
-    }
     
-    if (mouseDown && countdownToShot <= 0 && bulletsLeft > 0) {
-      let shotPosition = new THREE.Vector3();
-      var cameraDirection = controls
-        .getDirection(new THREE.Vector3(0, 0, 0))
-        .normalize()
-        .clone();
-      var rayCaster = new THREE.Raycaster();
-      
-      
-      //setting up for the hitpoint
-      var hitGeometry = new THREE.CircleGeometry(0.2, 16);
-      var hitMateral = new THREE.MeshBasicMaterial({ color: 0x0e0909 });
-      circle = new THREE.Mesh(hitGeometry, hitMateral);
-      circle.material.side = THREE.DoubleSide;
-      rayCaster.set(controls.getObject().position, cameraDirection);
-      var intersects = rayCaster.intersectObjects(scene.children);
-
-      for (
-        var intersectIndex = 0;
-        intersectIndex < intersects.length;
-        intersectIndex++
-      ) {
-        shotPosition = intersects[intersectIndex].point;
+    /* shooting audio*/
+    if (
+      mouseDown &&
+      !playingShootingAudio &&
+      bulletsLeft > 0 &&
+      reloadTime <= 0.1
+    ) {
+      if (!muted) {
+        shootingAudio.play();
+        playingShootingAudio = true;
       }
-      circle.alive = true;
-      scene.add(circle);
-      circle.name = "hit";
-      circleArray.push(circle);
-
-      if (shotPosition.x >= world.MAP_SIZE / 2 - 1) {
-        circle.position.set(
-          shotPosition.x - 0.1,
-          shotPosition.y,
-          shotPosition.z
-        );
-        circle.rotation.y = -Math.PI / 2;
-      } else if (shotPosition.x <= -(world.MAP_SIZE / 2 - 1)) {
-        circle.position.set(
-          shotPosition.x + 0.1,
-          shotPosition.y,
-          shotPosition.z
-        );
-        circle.rotation.y = -Math.PI / 2;
-      } else if (shotPosition.z >= world.MAP_SIZE / 2 - 1) {
-        circle.position.set(
-          shotPosition.x,
-          shotPosition.y,
-          shotPosition.z - 0.1
-        );
-      } else if (shotPosition.z <= -(world.MAP_SIZE / 2 - 1)) {
-        circle.position.set(
-          shotPosition.x,
-          shotPosition.y,
-          shotPosition.z + 0.1
-        );
-      } else if (
-        (shotPosition.y <= 6 && shotPosition.x <= world.MAP_SIZE / 2 - 1) ||
-        (shotPosition.y <= 6 && shotPosition.x >= -(world.MAP_SIZE / 2 - 1)) ||
-        (shotPosition.y <= 6 && shotPosition.z <= world.MAP_SIZE / 2 - 1) ||
-        (shotPosition.y <= 6 && shotPosition.z >= -(world.MAP_SIZE / 2 - 1))
-      ) {
-        circle.position.set(shotPosition.x, 0.1, shotPosition.z);
-        circle.rotation.x = -Math.PI / 2;
-      }
-
-      countdownToShot =
-        weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t;
-      let recoilXMin;
-      let recoilXMax;
-      let recoilYMin;
-      let recoilYMax;
-      //controlling recoil
+    }
+   
+    // call shoot to shoot bullets
+    if(gamepads.length > 0) {
+      
       if (
-        selectedBarrelAttachment === "barrelExtensionLevelOne" &&
-        selectedWeapon != "flatline" &&
-        selectedWeapon != "havocNoTurbo" &&
-        selectedWeapon != "havocTurbo"
+        gamepads[0].buttons[7].pressed &&
+        countdownToShot <= 0 &&
+        bulletsLeft > 0 &&
+        reloadTime <= 0.1
       ) {
-        recoilXMin = recoilPattern[bulletNumber].xMin * 0.9;
-        recoilXMax = recoilPattern[bulletNumber].xMax * 0.9;
-        recoilYMin = recoilPattern[bulletNumber].yMin * 0.9;
-        recoilYMax = recoilPattern[bulletNumber].yMax * 0.9;
-      } else if (
-        selectedBarrelAttachment === "barrelExtensionLevelTwo" &&
-        selectedWeapon != "flatline" &&
-        selectedWeapon != "havocNoTurbo" &&
-        selectedWeapon != "havocTurbo"
-      ) {
-        recoilXMin = recoilPattern[bulletNumber].xMin * 0.85;
-        recoilXMax = recoilPattern[bulletNumber].xMax * 0.85;
-        recoilYMin = recoilPattern[bulletNumber].yMin * 0.85;
-        recoilYMax = recoilPattern[bulletNumber].yMax * 0.85;
-      } else if (
-        selectedBarrelAttachment === "barrelExtensionLevelThree" &&
-        selectedWeapon != "flatline" &&
-        selectedWeapon != "havocNoTurbo" &&
-        selectedWeapon != "havocTurbo"
-      ) {
-        recoilXMin = recoilPattern[bulletNumber].xMin * 0.8;
-        recoilXMax = recoilPattern[bulletNumber].xMax * 0.8;
-        recoilYMin = recoilPattern[bulletNumber].yMin * 0.8;
-        recoilYMax = recoilPattern[bulletNumber].yMax * 0.8;
-      } else {
-        recoilXMin = recoilPattern[bulletNumber].xMin;
-        recoilXMax = recoilPattern[bulletNumber].xMax;
-        recoilYMin = recoilPattern[bulletNumber].yMin;
-        recoilYMax = recoilPattern[bulletNumber].yMax;
-      }
-
-      controls.getObject().children[0].rotation.x =
-        controls.getObject().children[0].rotation.x +
-        randomNumberinRange(recoilYMin, recoilYMax) * 0.0003;
-      controls.getObject().rotation.y =
-        controls.getObject().rotation.y +
-        randomNumberinRange(recoilXMin, recoilXMax) * 0.0003;
-
-      bulletNumber++;
-
-      bulletsLeft--;
+        shooting = true;
+        shoot();
+      } 
+    }else if (
+      mouseDown &&
+      countdownToShot <= 0 &&
+      bulletsLeft > 0 &&
+      reloadTime <= 0.1
+    ) {
+      shoot();
     }
 
+    if (destroyedTargets >= numberOftargets) {
+      destroyedTargets = 0;
+      targets = [];
+    }
     timeToAnimate = time - timeToAnimate;
 
     if (countdownToShot > 0) {
@@ -618,8 +935,17 @@ function animate() {
         countdownToShot = countdownToShot;
       }
     }
+    reloadTime -= delta + timeToAnimate;
     prevTime = time;
+    if (playMode === "challenge" && destroyedTargets != targets.length) {
+      endScoreTime += delta + timeToAnimate;
+    }
   } //end of movement + jumping
-
+  if(gamepads.length > 0) {
+    if(gamepads[0].buttons[7].pressed == false && shooting == true) {
+      shooting = true;
+    }
+  } 
+  
   renderer.render(scene, camera);
 } //end of animate

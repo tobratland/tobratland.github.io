@@ -42,10 +42,9 @@
         style="width: 30; height: 30; z-index: 2; border: 0px;"
       ></canvas>
     </div>
+    
     <div id="blocker" class="grid-container">
-      <div class="world">
-        <h2>Reserved for more settings and stuff</h2>
-      </div>
+    
       <div class="instructions">
         <h3>Instructions</h3>
         <p>Recoil training for Apex Legends</p>
@@ -70,7 +69,7 @@
         <button id="clearBulletsButton">Remove hits</button>
       </div>
       <div class="play">
-        <button id="playButton">Play game</button>
+        <button id="playButton" class="button">Play <br> Training mode</button>
       </div>
       <div class="contact">
         <h2>Contact me</h2>
@@ -96,6 +95,13 @@
               style="width:72px;height:72px;border:0;"
             />
           </a>
+        </div>
+      </div>
+      <div class="controller">
+        <h2>Controls</h2>
+        <div class="controllerButtons">
+            <button id="controllerButtonMouse" class="button">Mouse</button>
+            <button id="controllerButtonGamePad" class="button">Gamepad</button>
         </div>
       </div>
       <div class="weapon">
@@ -139,6 +145,39 @@
           >
         </select>
       </div>
+      <div class="challenge">
+        <h2>Challenge Mode</h2>
+        <div id="difficulty">
+          <h4>Challenge Mode</h4>
+          <select id="challengeDifficulty">
+            <optgroup label="Available Modes">
+            <option value="easy">Bouncing Balls</option>
+            <optgroup label="Coming Modes"></optgroup>
+            <option value="reserved"
+              >Reserved for others</option
+            >
+          </select>
+        </div>
+        <br>
+          <div class="play">
+            <button id="challengeButton" class="button">Play challenge</button>
+          </div>
+          <br>
+          <br>  
+          <h4>Your Last score</h4>
+          <div id="defeatedTargets">
+            </div>
+          <div id="timeUsed">
+          </div>
+          <div id="shotsFired">
+          </div>
+          <div id="reloadedTimes">
+          </div>
+          <div id="weaponSelected">
+          </div>
+          
+          
+      </div>
       <div class="settings">
         <div class="FOVslidecontainer">
           <p>FOV</p>
@@ -161,7 +200,7 @@
             oninput="myRange.value=fovValue.value"
           />
         </div>
-        <div class="FOVslidecontainer">
+        <div id="mouseSens" class="FOVslidecontainer">
           <p>Mouse sensitivity</p>
           <input
             type="range"
@@ -182,6 +221,28 @@
             oninput="MouseSensRange.value=MouseSensNumber.value"
           />
         </div>
+        <div class="FOVslidecontainer" id="ps4Sens">
+          <p>Gamepad Sensitivity</p>
+          <input 
+            type="range" 
+            id="ps4SensSlider" 
+            step="1"
+            min="1"
+            max="8"
+            value="3"
+            class="slider"
+            oninput="ps4SensNumber.value=ps4SensSlider.value"
+            >
+        </br>
+          <input
+            type="number"
+            id="ps4SensNumber"
+            min="1"
+            max="8"
+            value="3"
+            oninput="ps4SensSlider.value=ps4SensNumber.value"
+          />
+        </div>
         <br />
         <input type="checkbox" id="reverseMouseUpDownCheckbox" /> reverse mouse
         up/down
@@ -195,7 +256,7 @@
       <div id="privacy">
         <p>
           My site uses cookies to personalise content and adverts, and to
-          analyse traffic!
+          analyse traffic! ok?
         </p>
         <button id="acceptCookies">Thats fine</button>
         <button id="rejectCookies">No thanks</button>
@@ -225,6 +286,8 @@
     </div>
     <script src="./js/library/three.js" type="module"></script>
     <script src="./js/world.js" type="module"></script>
+    <script src="./js/challengeModeScore.js" type="module"></script>
+    <script src="./js/target.js" type="module"></script>
     <script src="./js/library/howler.js" type="module"></script>
     <script src="./js/player.js" type="module"></script>
     <script src="./js/library/PointerLockControls.js" type="module"></script>
