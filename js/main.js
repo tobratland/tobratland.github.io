@@ -805,7 +805,7 @@ function animate() {
       if (targets[i].hits.length > 3) {
         targets[i].material.color.setHex(0xff0000);
       }
-      if (targets[i].hits.length > 4) {
+      if (targets[i].hits.length > 5) {
         let selectedObject = scene.getObjectByName(targets[i].name);
         scene.remove(selectedObject);
         clearHits(targets[i]);

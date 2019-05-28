@@ -6,6 +6,10 @@ Allowing players to practise recoil and timing of weapons directly in browser, a
 
 
 ## Production History
+### 2.0.0 - 28.05.2019
+Added a new gamemode: Challenge.
+Added a challenge: Bouncing balls. Shoot and kill all the bouncing balls to test your speed and accuracy!
+Added support for gamepads, experimental but works 99% of the time!
 ### 1.3.0 - 16.05.2019
 Added shooting audio for all weapons. Added option to mute. Added the start of a HUD, the first item on the HUD is bullets left / total bullets in mag.
 ### 1.2.0 - 10.05.2019
@@ -46,51 +50,14 @@ Not a complete list, just updated as i remember the things i want to add.
 - [ ] Add styling to make it cooler!
 
 ### Physics 'n stuff
-- [ ] Add crouching
-- [ ] Add running while shift
+- [ ] Add crouching(will not add due to ctrl + W closes tab on chrome)
+- [x] Add running while shift
 - [ ] Add sliding from running to crouching
 
-### Game logic
-- [ ] Add moving targets
-- [ ] Rethink how hits are registrered and displayed to allow moving targets to get hit.
-- [ ] Moving targets get removed/change color after x-amount of hits.
-
-### Weapons
-- [ ] Assaultrifles 
-      - [x] Flatline 
-      - [x] Havoc 
-      - [x] Havoc (Turbocharged)
-      - [ ] Hemlok (Burst)
-      - [ ] Hemlok (Single)
-      - [x] R-301
-
-- [ ] LMGs
-      - [x] Devotion 
-      - [x] Devotion(Turbocharged)
-      - [x] Spitfire 
-
-- [ ] Pistols
-      - [ ] P2020
-      - [x] RE-45 Auto
-      - [ ] Wingman
-
-- [ ] Shotguns
-      - [ ] EVA-8 Auto
-      - [ ] Mastiff
-      - [ ] Mozambique
-      - [ ] Peacekeeper
-
-- [ ] SMGs
-      - [x] Alternator
-      - [ ] Prowler (Auto)
-      - [ ] Prowler (burst)
-      - [x] R-99
-
-- [ ] Sniper Rifles
-      - [ ] G7 Scout
-      - [ ] Kraber
-      - [ ] Longbow
-      - [ ] Triple Take
+### Scoreboards
+- [x] Add local scoreboard
+- [ ] Add backend for storing scoreboards
+- [ ] Add top scoreboards by weapon to the walls
 
 
 
