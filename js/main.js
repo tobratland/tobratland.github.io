@@ -4,10 +4,13 @@ import { models } from "./models.js";
 import { settings } from "./settings.js";
 import { weapons } from "./weapons.js";
 import { score } from "./challengeModeScore.js";
-
+let meshArray = []
+var loader = new THREE.FontLoader();
 let camera, scene, renderer, controls, loadingManager;
 let wallNorth, wallEast, wallSouth, wallWest, target;
 let axes0, axes1, axes2, axes3;
+const textMaterial = new THREE.MeshPhongMaterial( { color: 0x000000, specular: 0xff0000 } );
+const headerTextMaterial = new THREE.MeshPhongMaterial( { color: 0x460024, specular: 0x460024 } );
 let prevTime = performance.now();
 let direction = new THREE.Vector3();
 let moveForward = false;
@@ -16,12 +19,18 @@ let moveLeft = false;
 let moveRight = false;
 let mouseDown = false;
 let RESOURCES_LOADED = false;
+let scoreWpnLoadTicker = 0;
+let scoreScoreLoadTicker = 0;
+let scoreNicknameLoadTicker = 0;
+
 let velocity = new THREE.Vector3();
 const USE_WIREFRAME = false;
-let playerMesh;
+let playerMesh
 let groundlevel = 10
 let hud = document.getElementById("hud");
 let meshes = {};
+const topScoreHeaders = 
+[{"weapon": "Weapon", "nickname": "Nickname", "theScore": "TopScore"}]
 let weaponSelector = document.getElementById("weaponSelector");
 let magazineSelector = document.getElementById("magazineSelector");
 let barrelAttachmentSelector = document.getElementById("barrelAttachment");
@@ -75,6 +84,7 @@ let shootingAudio = new Howl({
 });
 let playingShootingAudio = false;
 
+
 if (localStorage.getItem("consentedToCookies") != null) {
   consentedToCookies = localStorage.getItem("consentedToCookies");
   console.log(consentedToCookies);
@@ -102,6 +112,8 @@ init();
 animate();
 
 function init() {
+  document.getElementById("submitNickname").style.visibility = "hidden";
+  fetchTopScoresAsync();
   camera = new THREE.PerspectiveCamera(
     document.getElementById("fovValue").value,
     window.innerWidth / window.innerHeight,
@@ -109,7 +121,6 @@ function init() {
     1000
   ); //sets the type of camera, size of the camera and min/max viewdistance. This is my eyes
   controls = new THREE.PointerLockControls(camera);
-  
   const blocker = document.getElementById("blocker");
   const ps4SensSelector = document.getElementById("ps4Sens")
   const mouseSenseSelector = document.getElementById("mouseSens")
@@ -121,6 +132,7 @@ function init() {
   const controllerButtonMouse = document.getElementById(
     "controllerButtonMouse"
   );
+  
   
   ps4SensSelector.style.visibility = "hidden"
   changeController();
@@ -163,6 +175,7 @@ function init() {
   // add cookie consent
   cookieConsentButton.addEventListener("click", function() {
     privacyBlocker.style.visibility = "hidden";
+    
     consentedToCookies = true;
     localStorage.setItem("consentedToCookies", true);
   });
@@ -275,7 +288,8 @@ function init() {
     playerMesh = new THREE.Mesh(player.mesh.geomerty, player.mesh.material);
     scene.add(playerMesh);
   }
-
+  
+  
   /* CREATE WORLD  */
 
   // floor
@@ -316,7 +330,112 @@ function init() {
     floor,
     roof
   );
+  
+  //get scores from api
+  async function fetchTopScoresAsync () {
+    let data = await (await fetch('https://localhost:44392/api/score')).json() ;
+    console.log(data)
+    addWeaponTopscores(topScoreHeaders)
+    addWeaponTopscores(data)
+    addScoreTopscores(topScoreHeaders)
+    addScoreTopscores(data)
+    addNicknameTopscores(topScoreHeaders)
+    addNicknameTopscores(data)
+    //addTopscores(topScoreHeaders)
+ 
+    
+  }
+  function getTextGeometry(text, font){
+    var geometry;
+    return geometry = new THREE.TextGeometry( text, {
+      font: font,
+      size: 4,
+      height: 0.5,
+      curveSegments: 12,
+      bevelEnabled: false,
+    } );
+  }
+    
+  function addWeaponTopscores(data){
+    console.log(data[0].weapon)
+    let mesh
+    
+    for(let i = 0; i < data.length; i++) {
+      
+      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+      var geometry = getTextGeometry(data[i].weapon, font)
+        
+    if(data[0].weapon == "Weapon"){
+      mesh = new THREE.Mesh(geometry, headerTextMaterial)
+    }else {
+      mesh = new THREE.Mesh(geometry, textMaterial)
+    }
+    
+    mesh.position.set(-125, 78 - (6 * scoreWpnLoadTicker), 110)
+    mesh.rotation.y = Math.PI / 2
+    collidableMeshList.push(mesh)
+    scene.add(mesh)
+    scoreWpnLoadTicker++
+    
+      } );
+    }
+  }
+  function addScoreTopscores(data){
+    console.log(data[0].theScore)
+    let scoremesh
+    
+    for(let i = 0; i < data.length; i++) {
+      
+      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+      var geometry = getTextGeometry(data[i].theScore.toString(), font)
+        
+    if(data[0].weapon == "Weapon"){
+      scoremesh = new THREE.Mesh(geometry, headerTextMaterial)
+    }else {
+      scoremesh = new THREE.Mesh(geometry, textMaterial)
+    }
+    
+    scoremesh.position.set(-125, 78 - (6 * scoreScoreLoadTicker), 20)
+    scoremesh.rotation.y = Math.PI / 2
+    collidableMeshList.push(scoremesh)
+    scene.add(scoremesh)
+    
+    scoreScoreLoadTicker++
+      } );
+      
+    }
+  }
+  function addNicknameTopscores(data){
+    console.log(data[0].nickname)
+    let wpnMesh
+    
+    for(let i = 0; i < data.length; i++) {
+      
+      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+      var geometry = getTextGeometry(data[i].nickname, font)
+        
+    if(data[0].weapon == "Weapon"){
+      wpnMesh = new THREE.Mesh(geometry, headerTextMaterial)
+    }else {
+      wpnMesh = new THREE.Mesh(geometry, textMaterial)
+    }
+    
+    wpnMesh.position.set(-125, 78 - (6 * scoreNicknameLoadTicker), -30)
+    wpnMesh.rotation.y = Math.PI / 2
+    collidableMeshList.push(wpnMesh)
+    scene.add(wpnMesh)
+    scoreNicknameLoadTicker++
+    
+      } );
+      
+    }
+  }
 
+  
+          
+ 
+
+  
   //targets
   let target1Geometry = new THREE.CircleGeometry(4, 16);
   let target1Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
@@ -560,9 +679,12 @@ function addMovingTargets() {
     collidableMeshList.push(target);
     target.name = "target" + i;
     target.hits = [];
-    target.speedX = randomNumberinRange(-0.7, 0.7) * delta;
-    target.speedY = randomNumberinRange(-0.7, 0.7) * delta;
-    target.speedZ = randomNumberinRange(-0.7, 0.7) * delta;
+   /*  target.speedX = randomNumberinRange(-1.5, 1.5);
+    target.speedY = randomNumberinRange(-1.5, 1.5);
+    target.speedZ = randomNumberinRange(-1.5, 1.5); */
+    target.speedX = 0
+    target.speedY = 0
+    target.speedZ = 0
     targets.push(target);
   }
 }
@@ -616,6 +738,7 @@ function updateScore() {
     "Amount of times you reloaded: " + scoreReloaded;
   document.getElementById("weaponSelected").innerHTML =
     "Weapon used: " + scoreWeapon;
+  document.getElementById("submitNickname").style.visibility = "visible";
 }
 function updateMute() {
   mute = document.getElementById("mute").checked;
@@ -642,8 +765,8 @@ function onResoucesLoaded() {
 }
 
 function randomNumberinRange(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+  return  Math.floor(Math.random() * (max - min + 1)) + min;
+} 
 
 function shoot() {
   //handles everything that happens when the player shoots except for sound
@@ -732,6 +855,7 @@ function shoot() {
     scoreShotsFired++;
   }
 }
+
 
 function animate() {
   requestAnimationFrame(animate);
@@ -923,6 +1047,7 @@ function animate() {
     }
 
     if (destroyedTargets >= numberOftargets) {
+      
       destroyedTargets = 0;
       targets = [];
     }
