@@ -4,6 +4,8 @@ import { models } from "./models.js";
 import { settings } from "./settings.js";
 import { weapons } from "./weapons.js";
 import { score } from "./challengeModeScore.js";
+import { topScores } from "./topScores.js"
+
 let meshArray = []
 var loader = new THREE.FontLoader();
 let camera, scene, renderer, controls, loadingManager;
@@ -126,6 +128,7 @@ function init() {
   const mouseSenseSelector = document.getElementById("mouseSens")
   const playButton = document.getElementById("playButton");
   const challengeButton = document.getElementById("challengeButton");
+  const submitScoreButton = document.getElementById("submitScore");
   const controllerButtonGamePad = document.getElementById(
     "controllerButtonGamePad"
   );
@@ -202,7 +205,6 @@ function init() {
       playMode = "challenge";
       clearTargets();
       changeGamepadSens()
-      endScoreTime = 0;
       scoreShotsFired = 0;
       scoreReloaded = 0;
       scoreWeapon = selectedWeapon;
@@ -213,6 +215,12 @@ function init() {
     },
     false
   );
+  submitScoreButton.addEventListener(
+    "click",
+    function(){
+      submitScore();
+    }
+  )
   clearBulletsButton.addEventListener(
     "click",
     function() {
@@ -231,6 +239,7 @@ function init() {
     crosshairCanvas.style.display = "block";
     hud.style.display = "block";
     ps4SensSelector.style.visibility = "hidden"
+    document.getElementById("submitNickname").style.visibility = "hidden";
     selectWeapon(); //selects weapon
     selectMagazine(); //selects magazinesize
     selectBarrelMod(); //selects barrelmod
@@ -335,14 +344,24 @@ function init() {
   async function fetchTopScoresAsync () {
     let data = await (await fetch('https://localhost:44392/api/score')).json() ;
     console.log(data)
+    //adds the headers and scores to the wall after getting it from the api
     addWeaponTopscores(topScoreHeaders)
     addWeaponTopscores(data)
     addScoreTopscores(topScoreHeaders)
     addScoreTopscores(data)
     addNicknameTopscores(topScoreHeaders)
     addNicknameTopscores(data)
-    //addTopscores(topScoreHeaders)
- 
+    //make this a function! sets the score from the api to the local score, to compare to players scores.
+    topScores.spitfire = data[0].theScore
+    topScores.devotionWithTurbocharger = data[1].theScore
+    topScores.devotionWithoutTurbocharger = data[2].theScore
+    topScores.r99 = data[3].theScore
+    topScores.alternator = data[4].theScore
+    topScores.r301 = data[5].theScore
+    topScores.flatline = data[6].theScore
+    topScores.havocWithTurbocharger = data[7].theScore
+    topScores.havocWithoutTurbocharger = data[8].theScore
+    topScores.re45 = data[9].theScore
     
   }
   function getTextGeometry(text, font){
@@ -430,7 +449,7 @@ function init() {
       
     }
   }
-
+  
   
           
  
@@ -647,6 +666,58 @@ function changeController() {
     controllerButtonGamePad.style.color = "grey";
   }
 }
+async function submitScore(){
+  //if(player.score[selectedWeapon] > topScores[selectedWeapon])
+  var nickname = document.getElementById("nickname").value
+  var url = 'https://localhost:44392/api/score';
+  var data = {
+    "weapon": selectedWeapon.toString(),
+    "nickname": nickname.toString(),
+    "theScore": player.score[selectedWeapon].toString()
+  } 
+console.log(data.nickname)
+  fetch(url, {
+    method: 'POST', // or 'PUT'
+    body: JSON.stringify(data), // data can be `string` or {object}!
+    headers:{
+      'Content-Type': 'application/json'
+    }
+  }).then(res => res.json())
+  .then(response => console.log('Success:', JSON.stringify(response)))
+  .catch(error => console.error('Error:', error)); 
+  
+  console.log(player.score[selectedWeapon], topScores[selectedWeapon], nickname)
+
+}
+function setScore(){
+    let barrel, magazine
+    if(selectedMagazine == "noExtensions"){
+      magazine = 0
+    } else if (selectedMagazine == "extensionLevelOne") {
+      magazine = 1
+    }else if (selectedMagazine == "extensionLevelTwo") {
+      magazine = 2
+    }else{
+      magazine = 3
+    }
+    if(selectedBarrelAttachment == "noBarrelExtension"){
+      barrel = 0
+    } else if (selectedBarrelAttachment == "barrelExtensionLevelOne") {
+      barrel = 1
+    }else if (selectedBarrelAttachment == "barrelExtensionLevelTwo") {
+      barrel = 2
+    }else{
+      barrel = 3
+    }
+    
+    
+    let reloads = score.reloaded;
+    let time = score.time;
+    let finalScore = 100000 - ((time * 100) + (reloads * 4) + (barrel * 100) + (magazine * 100))
+
+    console.log(barrel, magazine, reloads, time, finalScore)
+    player.score[selectedWeapon] = finalScore.toFixed(0)
+}
 function selectWeapon() {
   selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value;
 }
@@ -679,12 +750,12 @@ function addMovingTargets() {
     collidableMeshList.push(target);
     target.name = "target" + i;
     target.hits = [];
-   /*  target.speedX = randomNumberinRange(-1.5, 1.5);
-    target.speedY = randomNumberinRange(-1.5, 1.5);
-    target.speedZ = randomNumberinRange(-1.5, 1.5); */
-    target.speedX = 0
+    target.speedX = randomNumberinRange(-0.4, 0.4);
+    target.speedY = randomNumberinRange(-0.4, 0.4);
+    target.speedZ = randomNumberinRange(-0.4, 0.4); 
+    /* target.speedX = 0
     target.speedY = 0
-    target.speedZ = 0
+    target.speedZ = 0 */
     targets.push(target);
   }
 }
@@ -730,7 +801,7 @@ function updateScore() {
       targets.length +
       " targets, not good!";
   }
-
+  document.getElementById("endScore").innerHTML = "Your score is " + player.score[selectedWeapon];
   document.getElementById("timeUsed").innerHTML = "Time used: " + scoreTime;
   document.getElementById("shotsFired").innerHTML =
     "Shots Fired: " + scoreShotsFired;
@@ -1047,7 +1118,8 @@ function animate() {
     }
 
     if (destroyedTargets >= numberOftargets) {
-      
+      score.time = endScoreTime;
+      setScore()
       destroyedTargets = 0;
       targets = [];
     }

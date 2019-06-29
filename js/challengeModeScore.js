@@ -1,6 +1,6 @@
 export let score = {
-    time: 2000,
+    time: 2000000000,
     shotsFired: 200,
     reloaded: 200,
-    weapon: "spitfire",
+    weapon: null,
 }
