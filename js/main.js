@@ -202,13 +202,25 @@ function changeController() {
 async function submitScore(){
   //if(player.score[selectedWeapon] > topScores[selectedWeapon])
   var nickname = document.getElementById("nickname").value
-  var url = 'https://localhost:44392/api/score';
+  var url = 'http://cpttheinternet-001-site1.atempurl.com/api/score';
+  let scoreWeapon
+  if(selectedWeapon == "havocTurbo"){
+    scoreWeapon = "Havoc with turbocharger"
+  } else if (selectedWeapon == "havocNoTurbo"){
+    scoreWeapon = "Havoc without turbocharger"
+  } else if (selectedWeapon == "devotionNoTurbo"){
+    scoreWeapon = "Devotion without turbocharger"
+  }else if (selectedWeapon == "devotionTurbo"){
+    scoreWeapon = "Devotion with turbocharger"
+  } else {
+    scoreWeapon = selectedWeapon.toString()
+  }
   var data = {
-    "weapon": selectedWeapon.toString(),
+    "weapon": scoreWeapon,
     "nickname": nickname.toString(),
     "theScore": player.score[selectedWeapon].toString()
   } 
-console.log(data.nickname)
+console.log(data)
   fetch(url, {
     method: 'POST', // or 'PUT'
     body: JSON.stringify(data), // data can be `string` or {object}!
@@ -246,7 +258,7 @@ function setScore(){
     
     let reloads = score.reloaded;
     let time = score.time;
-    let finalScore = 100000 - ((time * 100) + (reloads * 4) + (barrel * 100) + (magazine * 100))
+    let finalScore = 100000 - ((time * 100) + (reloads * 10) + (barrel * 800) + (magazine * 800))
 
     console.log(barrel, magazine, reloads, time, finalScore)
     player.score[selectedWeapon] = finalScore.toFixed(0)
@@ -690,7 +702,7 @@ function init() {
   
   //get scores from api
   async function fetchTopScoresAsync () {
-    let data = await (await fetch('https://localhost:44392/api/score')).json() ;
+    let data = await (await fetch('http://cpttheinternet-001-site1.atempurl.com/api/score')).json() ;
     console.log(data)
     //adds the headers and scores to the wall after getting it from the api
     addWeaponTopscores(topScoreHeaders)
