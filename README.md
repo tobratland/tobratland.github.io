@@ -6,10 +6,13 @@ Allowing players to practise recoil and timing of weapons directly in browser, a
 
 
 ## Production History
+### 2.2.0 - 28.05.2019
+Added the scoreboard: Get on the scoreboard by excelling at the bouncing balls challenge!
+Refactored the code some for readability.
 ### 2.0.0 - 28.05.2019
 Added a new gamemode: Challenge.
 Added a challenge: Bouncing balls. Shoot and kill all the bouncing balls to test your speed and accuracy!
-Added support for gamepads, experimental but works 99% of the time!
+Added support for gamepads, 60% of the time, it works 100% of the time!
 ### 1.3.0 - 16.05.2019
 Added shooting audio for all weapons. Added option to mute. Added the start of a HUD, the first item on the HUD is bullets left / total bullets in mag.
 ### 1.2.0 - 10.05.2019
