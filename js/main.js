@@ -71,8 +71,6 @@ let endScoreTime = 0;
 let scoreShotsFired = score.shotsFired;
 let scoreReloaded = score.reloaded;
 let scoreWeapon = score.weapon;
-let crouching = false;
-let sprinting = false;
 let gamepadSens = document.getElementById("ps4SensNumber").value
 export let controllMode = "mouse";
 export let gamepads = {}
@@ -113,472 +111,7 @@ crosshairCtx.fillRect(13, 13, 4, 4);
 init();
 animate();
 
-function init() {
-  document.getElementById("submitNickname").style.visibility = "hidden";
-  fetchTopScoresAsync();
-  camera = new THREE.PerspectiveCamera(
-    document.getElementById("fovValue").value,
-    window.innerWidth / window.innerHeight,
-    1,
-    1000
-  ); //sets the type of camera, size of the camera and min/max viewdistance. This is my eyes
-  controls = new THREE.PointerLockControls(camera);
-  const blocker = document.getElementById("blocker");
-  const ps4SensSelector = document.getElementById("ps4Sens")
-  const mouseSenseSelector = document.getElementById("mouseSens")
-  const playButton = document.getElementById("playButton");
-  const challengeButton = document.getElementById("challengeButton");
-  const submitScoreButton = document.getElementById("submitScore");
-  const controllerButtonGamePad = document.getElementById(
-    "controllerButtonGamePad"
-  );
-  const controllerButtonMouse = document.getElementById(
-    "controllerButtonMouse"
-  );
-  
-  
-  ps4SensSelector.style.visibility = "hidden"
-  changeController();
-  controllerButtonGamePad.addEventListener("click", function() {
-    controllMode = "gamePad";
-    ps4SensSelector.style.visibility = "visible"
-    mouseSenseSelector.style.visibility = "hidden"
-    console.log(controllMode);
-    changeController();
-  });
-  controllerButtonMouse.addEventListener("click", function() {
-    controllMode = "mouse";
-    ps4SensSelector.style.visibility = "hidden"
-    mouseSenseSelector.style.visibility = "visible"
-    console.log(controllMode);
-    changeController();
-  });
-  //create the scene
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(world.colorOfWorld); //sets the scene backgroundcolor
-  scene.fog = new THREE.Fog(0xffffff, 0, 750); // sets fog for the scene
-
-  //adds light to the scene
-  const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
-  light.position.set(0.5, 1, 0.75);
-  scene.add(light);
-
-  scene.add(controls.getObject()); //adds the pointerlockcontrols to the scene
-
-  loadingManager = new THREE.LoadingManager();
-
-  loadingManager.onProgress = function(item, loaded, total) {
-    console.log(item, loaded, total);
-  };
-  loadingManager.onLoad = function() {
-    console.log("loaded all resources");
-    RESOURCES_LOADED = true;
-    onResoucesLoaded();
-  };
-  // add cookie consent
-  cookieConsentButton.addEventListener("click", function() {
-    privacyBlocker.style.visibility = "hidden";
-    
-    consentedToCookies = true;
-    localStorage.setItem("consentedToCookies", true);
-  });
-  cookieRejectionButton.addEventListener("click", function() {
-    privacyBlocker.style.visibility = "hidden";
-    consentedToCookies = false;
-    localStorage.setItem("consentedToCookies", false);
-  });
-
-  //add eventlisteners to the playbutton to make click lock controls and adds eventlisteners to the controls to lock/unlock pointerlock
-  playButton.addEventListener(
-    "click",
-    function() {
-      controls.lock();
-      playMode = "training";
-      changeGamepadSens()
-    },
-    false
-  );
-  challengeButton.addEventListener(
-    "click",
-    function() {
-      controls.lock();
-      playMode = "challenge";
-      clearTargets();
-      changeGamepadSens()
-      scoreShotsFired = 0;
-      scoreReloaded = 0;
-      scoreWeapon = selectedWeapon;
-      endScoreTime = 0;
-      if ((targets = [])) {
-        addMovingTargets();
-      }
-    },
-    false
-  );
-  submitScoreButton.addEventListener(
-    "click",
-    function(){
-      submitScore();
-    }
-  )
-  clearBulletsButton.addEventListener(
-    "click",
-    function() {
-      //removes hits from scene.
-      for (let i = 0; i < targets.length; i++) {
-        clearHits(targets[i]);
-      }
-      clearMisses();
-      clearTargets();
-    },
-    false
-  );
-  //when the player locks the controls, aka clicks play and leaves the options screen
-  controls.addEventListener("lock", function() {
-    blocker.style.visibility = "hidden";
-    crosshairCanvas.style.display = "block";
-    hud.style.display = "block";
-    ps4SensSelector.style.visibility = "hidden"
-    document.getElementById("submitNickname").style.visibility = "hidden";
-    selectWeapon(); //selects weapon
-    selectMagazine(); //selects magazinesize
-    selectBarrelMod(); //selects barrelmod
-    changeFov(); //updates the fov
-    changeMouseSensitivity(); // updates mouse sens
-    changeCountdownToShot(); // updates the countdown to the first shot
-    updateMute(); //checks if muted
-    updateAudio(); //updates the audio to fit the weapon
-    recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
-    bulletNumber = 0;
-    player.canShoot = true;
-    bulletsLeft =
-      weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
-  });
-
-  controls.addEventListener("unlock", function() {
-    blocker.style.visibility = "visible";
-    if(controllMode == "gamepad") {
-      ps4SensSelector.style.visibility = "visible"
-    }
-    crosshairCanvas.style.display = "none";
-    hud.style.display = "none";
-    player.canShoot = false;
-    if (playMode === "challenge") {
-      scoreTime = (endScoreTime - startScoreTime).toFixed(3) + " seconds";
-      updateScore();
-    }
-  });
-
-  //for loading models
-  for (var _key in models) {
-    (function(key) {
-      var mtlLoader = new THREE.MTLLoader(loadingManager);
-      mtlLoader.load(models[key].mtl, function(materials) {
-        materials.preload();
-
-        var objLoader = new THREE.OBJLoader(loadingManager);
-
-        objLoader.setMaterials(materials);
-        objLoader.load(models[key].obj, function(mesh) {
-          mesh.traverse(function(node) {
-            if (node instanceof THREE.Mesh) {
-              node.castShadow = true;
-              node.receiveShadow = true;
-            }
-          });
-          models[key].mesh = mesh;
-        });
-      });
-    })(_key);
-  }
-
-  /* CREATE PLAYER */
-  function createPlayer() {
-    playerMesh = new THREE.Mesh(player.mesh.geomerty, player.mesh.material);
-    scene.add(playerMesh);
-  }
-  
-  
-  /* CREATE WORLD  */
-
-  // floor
-  const floor = new THREE.Mesh( //creates floor
-    new THREE.PlaneGeometry(250, 250, 20, 20), // width, height, widthSegments, heightsegments
-    new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: USE_WIREFRAME })
-  );
-  const roof = new THREE.Mesh( //creates floor
-    new THREE.PlaneGeometry(250, 250, 20, 20), // width, height, widthSegments, heightsegments
-    new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: USE_WIREFRAME })
-  );
-  floor.rotation.x -= Math.PI / 2; //rotates the floor so it actually is on the floor
-  floor.receiveShadow = true; //allows the floor to receive shadows
-  scene.add(floor); //adds the floor to the scene
-  roof.rotation.x -= Math.PI / 2; //rotates the roof so it actually is on the roof
-  roof.position.y = 100;
-  roof.material.side = THREE.DoubleSide;
-  scene.add(roof); //adds the roof to the scene
-  //walls
-  const wallheight = world.MAP_HEIGHT; //sets wall atributes from world.js
-  const wallwidth = world.MAP_SIZE; //sets wall atributes from world.js
-  const wallcolor = world.wallColor; //sets wall atributes from world.js
-  var geometry = new THREE.PlaneGeometry(wallwidth, wallheight);
-  var material = new THREE.MeshBasicMaterial({
-    color: wallcolor,
-    side: THREE.DoubleSide
-  });
-  wallNorth = new THREE.Mesh(geometry, material);
-  wallSouth = new THREE.Mesh(geometry, material);
-  wallEast = new THREE.Mesh(geometry, material);
-  wallWest = new THREE.Mesh(geometry, material);
-  scene.add(wallNorth, wallSouth, wallEast, wallWest); //Adds walls to scene
-  collidableMeshList.push(
-    wallNorth,
-    wallSouth,
-    wallEast,
-    wallWest,
-    floor,
-    roof
-  );
-  
-  //get scores from api
-  async function fetchTopScoresAsync () {
-    let data = await (await fetch('https://localhost:44392/api/score')).json() ;
-    console.log(data)
-    //adds the headers and scores to the wall after getting it from the api
-    addWeaponTopscores(topScoreHeaders)
-    addWeaponTopscores(data)
-    addScoreTopscores(topScoreHeaders)
-    addScoreTopscores(data)
-    addNicknameTopscores(topScoreHeaders)
-    addNicknameTopscores(data)
-    //make this a function! sets the score from the api to the local score, to compare to players scores.
-    topScores.spitfire = data[0].theScore
-    topScores.devotionWithTurbocharger = data[1].theScore
-    topScores.devotionWithoutTurbocharger = data[2].theScore
-    topScores.r99 = data[3].theScore
-    topScores.alternator = data[4].theScore
-    topScores.r301 = data[5].theScore
-    topScores.flatline = data[6].theScore
-    topScores.havocWithTurbocharger = data[7].theScore
-    topScores.havocWithoutTurbocharger = data[8].theScore
-    topScores.re45 = data[9].theScore
-    
-  }
-  function getTextGeometry(text, font){
-    var geometry;
-    return geometry = new THREE.TextGeometry( text, {
-      font: font,
-      size: 4,
-      height: 0.5,
-      curveSegments: 12,
-      bevelEnabled: false,
-    } );
-  }
-    
-  function addWeaponTopscores(data){
-    console.log(data[0].weapon)
-    let mesh
-    
-    for(let i = 0; i < data.length; i++) {
-      
-      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
-      var geometry = getTextGeometry(data[i].weapon, font)
-        
-    if(data[0].weapon == "Weapon"){
-      mesh = new THREE.Mesh(geometry, headerTextMaterial)
-    }else {
-      mesh = new THREE.Mesh(geometry, textMaterial)
-    }
-    
-    mesh.position.set(-125, 78 - (6 * scoreWpnLoadTicker), 110)
-    mesh.rotation.y = Math.PI / 2
-    collidableMeshList.push(mesh)
-    scene.add(mesh)
-    scoreWpnLoadTicker++
-    
-      } );
-    }
-  }
-  function addScoreTopscores(data){
-    console.log(data[0].theScore)
-    let scoremesh
-    
-    for(let i = 0; i < data.length; i++) {
-      
-      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
-      var geometry = getTextGeometry(data[i].theScore.toString(), font)
-        
-    if(data[0].weapon == "Weapon"){
-      scoremesh = new THREE.Mesh(geometry, headerTextMaterial)
-    }else {
-      scoremesh = new THREE.Mesh(geometry, textMaterial)
-    }
-    
-    scoremesh.position.set(-125, 78 - (6 * scoreScoreLoadTicker), 20)
-    scoremesh.rotation.y = Math.PI / 2
-    collidableMeshList.push(scoremesh)
-    scene.add(scoremesh)
-    
-    scoreScoreLoadTicker++
-      } );
-      
-    }
-  }
-  function addNicknameTopscores(data){
-    console.log(data[0].nickname)
-    let wpnMesh
-    
-    for(let i = 0; i < data.length; i++) {
-      
-      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
-      var geometry = getTextGeometry(data[i].nickname, font)
-        
-    if(data[0].weapon == "Weapon"){
-      wpnMesh = new THREE.Mesh(geometry, headerTextMaterial)
-    }else {
-      wpnMesh = new THREE.Mesh(geometry, textMaterial)
-    }
-    
-    wpnMesh.position.set(-125, 78 - (6 * scoreNicknameLoadTicker), -30)
-    wpnMesh.rotation.y = Math.PI / 2
-    collidableMeshList.push(wpnMesh)
-    scene.add(wpnMesh)
-    scoreNicknameLoadTicker++
-    
-      } );
-      
-    }
-  }
-  
-  
-          
- 
-
-  
-  //targets
-  let target1Geometry = new THREE.CircleGeometry(4, 16);
-  let target1Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
-  let target1 = new THREE.Mesh(target1Geometry, target1Material);
-  let target2Geometry = new THREE.CircleGeometry(6, 16);
-  let target2Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
-  let target2 = new THREE.Mesh(target2Geometry, target2Material);
-  let target3Geometry = new THREE.CircleGeometry(10, 16);
-  let target3Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
-  let target3 = new THREE.Mesh(target3Geometry, target3Material);
-  scene.add(target1);
-  scene.add(target2);
-  scene.add(target3);
-
-  target1.position.z -= 124.99;
-  target1.position.y += 15;
-  target1.position.x += 18;
-  target2.position.z -= 124.99;
-  target2.position.y += 15;
-  target3.position.z -= 124.99;
-  target3.position.y += 15;
-  target3.position.x -= 25;
-  //positoning North wall
-  wallNorth.position.z -= 125;
-  wallNorth.position.y += wallheight / 2;
-
-  //positoning south wall
-  wallSouth.position.z += 125;
-  wallSouth.position.y += wallheight / 2;
-
-  //positoning east wall
-  wallEast.position.x -= 125;
-  wallEast.position.y += wallheight / 2;
-  wallEast.rotation.y -= Math.PI / 2;
-  //positoning west wall
-  wallWest.position.x += 125;
-  wallWest.position.y += wallheight / 2;
-  wallWest.rotation.y += Math.PI / 2;
-
-  renderer = new THREE.WebGLRenderer({ antialias: false });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-  //
-  window.addEventListener("resize", onWindowResize, false);
-
-  let onKeyDown = function(event) {
-    switch (event.keyCode) {
-      case 38: // up
-      case 87: // w
-        
-        moveForward = true;
-        break;
-      case 37: // left
-      case 65: // a
-        moveLeft = true;
-        break;
-      case 40: // down
-      case 83: // s
-        moveBackward = true;
-        break;
-      case 39: // right
-      case 68: // d
-        moveRight = true;
-        break;
-      case 32: // space
-        if (player.canJump === true) jump() //if canjump is true, jumps
-        player.canJump = false; //sets canjump to false, to prevent double jumping
-        break //just a test
-
-      case 82: // r
-        reload();
-        break;
-    }
-  };
-  let onKeyUp = function(event) {
-    switch (event.keyCode) {
-      case 38: // up
-      case 87: // w
-        moveForward = false;
-        break;
-      case 37: // left
-      case 65: // a
-        moveLeft = false;
-        break;
-      case 40: // down
-      case 83: // s
-        moveBackward = false;
-        break;
-      case 39: // right
-      case 68: // d
-        moveRight = false;
-        break;
-      case 16: // shift
-        sprinting = false;
-        moveSpeed = 400
-        break;  
-    }
-  };
-  const onMouseDown = function() {
-    /* startGunRotationX = controls.getObject().children[ 0 ].rotation.x
-            startGunRotationY =  controls.getObject().rotation.y */
-    mouseDown = true;
-    shooting = true;
-  };
-
-  const onMouseUp = function() {
-    mouseDown = false;
-    shooting = false;
-    shootingAudio.stop();
-    playingShootingAudio = false;
-    bulletNumber = 0;
-    changeCountdownToShot();
-  };
-  
-
-  document.addEventListener("keydown", onKeyDown, false);
-  document.addEventListener("keyup", onKeyUp, false);
-  window.addEventListener("mousedown", onMouseDown, false);
-  window.addEventListener("mouseup", onMouseUp, false);
-  
-
-  createPlayer();
-} //end of init
+// functions
 function changeCountdownToShot() {
   countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot;
 }
@@ -926,6 +459,468 @@ function shoot() {
     scoreShotsFired++;
   }
 }
+
+
+function init() {
+  document.getElementById("submitNickname").style.visibility = "hidden";
+  fetchTopScoresAsync();
+  camera = new THREE.PerspectiveCamera(
+    document.getElementById("fovValue").value,
+    window.innerWidth / window.innerHeight,
+    1,
+    1000
+  ); //sets the type of camera, size of the camera and min/max viewdistance. This is my eyes
+  controls = new THREE.PointerLockControls(camera);
+  const blocker = document.getElementById("blocker");
+  const ps4SensSelector = document.getElementById("ps4Sens")
+  const mouseSenseSelector = document.getElementById("mouseSens")
+  const playButton = document.getElementById("playButton");
+  const challengeButton = document.getElementById("challengeButton");
+  const submitScoreButton = document.getElementById("submitScore");
+  const controllerButtonGamePad = document.getElementById(
+    "controllerButtonGamePad"
+  );
+  const controllerButtonMouse = document.getElementById(
+    "controllerButtonMouse"
+  );
+  
+  
+  ps4SensSelector.style.visibility = "hidden"
+  changeController();
+  controllerButtonGamePad.addEventListener("click", function() {
+    controllMode = "gamePad";
+    ps4SensSelector.style.visibility = "visible"
+    mouseSenseSelector.style.visibility = "hidden"
+    console.log(controllMode);
+    changeController();
+  });
+  controllerButtonMouse.addEventListener("click", function() {
+    controllMode = "mouse";
+    ps4SensSelector.style.visibility = "hidden"
+    mouseSenseSelector.style.visibility = "visible"
+    console.log(controllMode);
+    changeController();
+  });
+  //create the scene
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(world.colorOfWorld); //sets the scene backgroundcolor
+  scene.fog = new THREE.Fog(0xffffff, 0, 750); // sets fog for the scene
+
+  //adds light to the scene
+  const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
+  light.position.set(0.5, 1, 0.75);
+  scene.add(light);
+
+  scene.add(controls.getObject()); //adds the pointerlockcontrols to the scene
+
+  loadingManager = new THREE.LoadingManager();
+
+  loadingManager.onProgress = function(item, loaded, total) {
+    console.log(item, loaded, total);
+  };
+  loadingManager.onLoad = function() {
+    console.log("loaded all resources");
+    RESOURCES_LOADED = true;
+    onResoucesLoaded();
+  };
+  // add cookie consent
+  cookieConsentButton.addEventListener("click", function() {
+    privacyBlocker.style.visibility = "hidden";
+    
+    consentedToCookies = true;
+    localStorage.setItem("consentedToCookies", true);
+  });
+  cookieRejectionButton.addEventListener("click", function() {
+    privacyBlocker.style.visibility = "hidden";
+    consentedToCookies = false;
+    localStorage.setItem("consentedToCookies", false);
+  });
+
+  //add eventlisteners to the playbutton to make click lock controls and adds eventlisteners to the controls to lock/unlock pointerlock
+  playButton.addEventListener(
+    "click",
+    function() {
+      controls.lock();
+      playMode = "training";
+      changeGamepadSens()
+    },
+    false
+  );
+  challengeButton.addEventListener(
+    "click",
+    function() {
+      controls.lock();
+      playMode = "challenge";
+      clearTargets();
+      changeGamepadSens()
+      scoreShotsFired = 0;
+      scoreReloaded = 0;
+      scoreWeapon = selectedWeapon;
+      endScoreTime = 0;
+      if ((targets = [])) {
+        addMovingTargets();
+      }
+    },
+    false
+  );
+  submitScoreButton.addEventListener(
+    "click",
+    function(){
+      submitScore();
+    }
+  )
+  clearBulletsButton.addEventListener(
+    "click",
+    function() {
+      //removes hits from scene.
+      for (let i = 0; i < targets.length; i++) {
+        clearHits(targets[i]);
+      }
+      clearMisses();
+      clearTargets();
+    },
+    false
+  );
+  //when the player locks the controls, aka clicks play and leaves the options screen
+  controls.addEventListener("lock", function() {
+    blocker.style.visibility = "hidden";
+    crosshairCanvas.style.display = "block";
+    hud.style.display = "block";
+    ps4SensSelector.style.visibility = "hidden"
+    document.getElementById("submitNickname").style.visibility = "hidden";
+    selectWeapon(); //selects weapon
+    selectMagazine(); //selects magazinesize
+    selectBarrelMod(); //selects barrelmod
+    changeFov(); //updates the fov
+    changeMouseSensitivity(); // updates mouse sens
+    changeCountdownToShot(); // updates the countdown to the first shot
+    updateMute(); //checks if muted
+    updateAudio(); //updates the audio to fit the weapon
+    recoilPattern = weapons.apexLegends[selectedWeapon].recoilPattern;
+    bulletNumber = 0;
+    player.canShoot = true;
+    bulletsLeft =
+      weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
+  });
+
+  controls.addEventListener("unlock", function() {
+    blocker.style.visibility = "visible";
+    if(controllMode == "gamepad") {
+      ps4SensSelector.style.visibility = "visible"
+    }
+    crosshairCanvas.style.display = "none";
+    hud.style.display = "none";
+    player.canShoot = false;
+    if (playMode === "challenge") {
+      scoreTime = (endScoreTime - startScoreTime).toFixed(3) + " seconds";
+      updateScore();
+    }
+  });
+
+  //for loading models
+  for (var _key in models) {
+    (function(key) {
+      var mtlLoader = new THREE.MTLLoader(loadingManager);
+      mtlLoader.load(models[key].mtl, function(materials) {
+        materials.preload();
+
+        var objLoader = new THREE.OBJLoader(loadingManager);
+
+        objLoader.setMaterials(materials);
+        objLoader.load(models[key].obj, function(mesh) {
+          mesh.traverse(function(node) {
+            if (node instanceof THREE.Mesh) {
+              node.castShadow = true;
+              node.receiveShadow = true;
+            }
+          });
+          models[key].mesh = mesh;
+        });
+      });
+    })(_key);
+  }
+
+  /* CREATE PLAYER */
+  function createPlayer() {
+    playerMesh = new THREE.Mesh(player.mesh.geomerty, player.mesh.material);
+    scene.add(playerMesh);
+  }
+  
+  
+  /* CREATE WORLD  */
+
+  // floor
+  const floor = new THREE.Mesh( //creates floor
+    new THREE.PlaneGeometry(250, 250, 20, 20), // width, height, widthSegments, heightsegments
+    new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: USE_WIREFRAME })
+  );
+  const roof = new THREE.Mesh( //creates floor
+    new THREE.PlaneGeometry(250, 250, 20, 20), // width, height, widthSegments, heightsegments
+    new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: USE_WIREFRAME })
+  );
+  floor.rotation.x -= Math.PI / 2; //rotates the floor so it actually is on the floor
+  floor.receiveShadow = true; //allows the floor to receive shadows
+  scene.add(floor); //adds the floor to the scene
+  roof.rotation.x -= Math.PI / 2; //rotates the roof so it actually is on the roof
+  roof.position.y = 100;
+  roof.material.side = THREE.DoubleSide;
+  scene.add(roof); //adds the roof to the scene
+  //walls
+  const wallheight = world.MAP_HEIGHT; //sets wall atributes from world.js
+  const wallwidth = world.MAP_SIZE; //sets wall atributes from world.js
+  const wallcolor = world.wallColor; //sets wall atributes from world.js
+  var geometry = new THREE.PlaneGeometry(wallwidth, wallheight);
+  var material = new THREE.MeshBasicMaterial({
+    color: wallcolor,
+    side: THREE.DoubleSide
+  });
+  wallNorth = new THREE.Mesh(geometry, material);
+  wallSouth = new THREE.Mesh(geometry, material);
+  wallEast = new THREE.Mesh(geometry, material);
+  wallWest = new THREE.Mesh(geometry, material);
+  scene.add(wallNorth, wallSouth, wallEast, wallWest); //Adds walls to scene
+  collidableMeshList.push(
+    wallNorth,
+    wallSouth,
+    wallEast,
+    wallWest,
+    floor,
+    roof
+  );
+  
+  //get scores from api
+  async function fetchTopScoresAsync () {
+    let data = await (await fetch('https://localhost:44392/api/score')).json() ;
+    console.log(data)
+    //adds the headers and scores to the wall after getting it from the api
+    addWeaponTopscores(topScoreHeaders)
+    addWeaponTopscores(data)
+    addScoreTopscores(topScoreHeaders)
+    addScoreTopscores(data)
+    addNicknameTopscores(topScoreHeaders)
+    addNicknameTopscores(data)
+    //make this a function! sets the score from the api to the local score, to compare to players scores.
+    topScores.spitfire = data[0].theScore
+    topScores.devotionWithTurbocharger = data[1].theScore
+    topScores.devotionWithoutTurbocharger = data[2].theScore
+    topScores.r99 = data[3].theScore
+    topScores.alternator = data[4].theScore
+    topScores.r301 = data[5].theScore
+    topScores.flatline = data[6].theScore
+    topScores.havocWithTurbocharger = data[7].theScore
+    topScores.havocWithoutTurbocharger = data[8].theScore
+    topScores.re45 = data[9].theScore
+    
+  }
+  function getTextGeometry(text, font){
+    return geometry = new THREE.TextGeometry( text, {
+      font: font,
+      size: 4,
+      height: 0.5,
+      curveSegments: 12,
+      bevelEnabled: false,
+    } );
+  }
+    
+  function addWeaponTopscores(data){
+    console.log(data[0].weapon)
+    let mesh
+    
+    for(let i = 0; i < data.length; i++) {
+      
+      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+      var geometry = getTextGeometry(data[i].weapon, font)
+        
+    if(data[0].weapon == "Weapon"){
+      mesh = new THREE.Mesh(geometry, headerTextMaterial)
+    }else {
+      mesh = new THREE.Mesh(geometry, textMaterial)
+    }
+    
+    mesh.position.set(-125, 78 - (6 * scoreWpnLoadTicker), 110)
+    mesh.rotation.y = Math.PI / 2
+    collidableMeshList.push(mesh)
+    scene.add(mesh)
+    scoreWpnLoadTicker++
+    
+      } );
+    }
+  }
+  function addScoreTopscores(data){
+    console.log(data[0].theScore)
+    let scoremesh
+    
+    for(let i = 0; i < data.length; i++) {
+      
+      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+      var geometry = getTextGeometry(data[i].theScore.toString(), font)
+        
+    if(data[0].weapon == "Weapon"){
+      scoremesh = new THREE.Mesh(geometry, headerTextMaterial)
+    }else {
+      scoremesh = new THREE.Mesh(geometry, textMaterial)
+    }
+    
+    scoremesh.position.set(-125, 78 - (6 * scoreScoreLoadTicker), 20)
+    scoremesh.rotation.y = Math.PI / 2
+    collidableMeshList.push(scoremesh)
+    scene.add(scoremesh)
+    
+    scoreScoreLoadTicker++
+      } );
+      
+    }
+  }
+  function addNicknameTopscores(data){
+    console.log(data[0].nickname)
+    let wpnMesh
+    
+    for(let i = 0; i < data.length; i++) {
+      
+      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+      var geometry = getTextGeometry(data[i].nickname, font)
+        
+    if(data[0].weapon == "Weapon"){
+      wpnMesh = new THREE.Mesh(geometry, headerTextMaterial)
+    }else {
+      wpnMesh = new THREE.Mesh(geometry, textMaterial)
+    }
+    
+    wpnMesh.position.set(-125, 78 - (6 * scoreNicknameLoadTicker), -30)
+    wpnMesh.rotation.y = Math.PI / 2
+    collidableMeshList.push(wpnMesh)
+    scene.add(wpnMesh)
+    scoreNicknameLoadTicker++
+    
+      } );
+      
+    }
+  }
+  
+  //targets
+  let target1Geometry = new THREE.CircleGeometry(4, 16);
+  let target1Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
+  let target1 = new THREE.Mesh(target1Geometry, target1Material);
+  let target2Geometry = new THREE.CircleGeometry(6, 16);
+  let target2Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
+  let target2 = new THREE.Mesh(target2Geometry, target2Material);
+  let target3Geometry = new THREE.CircleGeometry(10, 16);
+  let target3Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
+  let target3 = new THREE.Mesh(target3Geometry, target3Material);
+  scene.add(target1);
+  scene.add(target2);
+  scene.add(target3);
+
+  target1.position.z -= 124.99;
+  target1.position.y += 15;
+  target1.position.x += 18;
+  target2.position.z -= 124.99;
+  target2.position.y += 15;
+  target3.position.z -= 124.99;
+  target3.position.y += 15;
+  target3.position.x -= 25;
+  //positoning North wall
+  wallNorth.position.z -= 125;
+  wallNorth.position.y += wallheight / 2;
+
+  //positoning south wall
+  wallSouth.position.z += 125;
+  wallSouth.position.y += wallheight / 2;
+
+  //positoning east wall
+  wallEast.position.x -= 125;
+  wallEast.position.y += wallheight / 2;
+  wallEast.rotation.y -= Math.PI / 2;
+  //positoning west wall
+  wallWest.position.x += 125;
+  wallWest.position.y += wallheight / 2;
+  wallWest.rotation.y += Math.PI / 2;
+
+  renderer = new THREE.WebGLRenderer({ antialias: false });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+  //
+  window.addEventListener("resize", onWindowResize, false);
+
+  let onKeyDown = function(event) {
+    switch (event.keyCode) {
+      case 38: // up
+      case 87: // w
+        
+        moveForward = true;
+        break;
+      case 37: // left
+      case 65: // a
+        moveLeft = true;
+        break;
+      case 40: // down
+      case 83: // s
+        moveBackward = true;
+        break;
+      case 39: // right
+      case 68: // d
+        moveRight = true;
+        break;
+      case 32: // space
+        if (player.canJump === true) jump() //if canjump is true, jumps
+        player.canJump = false; //sets canjump to false, to prevent double jumping
+        break //just a test
+
+      case 82: // r
+        reload();
+        break;
+    }
+  };
+  let onKeyUp = function(event) {
+    switch (event.keyCode) {
+      case 38: // up
+      case 87: // w
+        moveForward = false;
+        break;
+      case 37: // left
+      case 65: // a
+        moveLeft = false;
+        break;
+      case 40: // down
+      case 83: // s
+        moveBackward = false;
+        break;
+      case 39: // right
+      case 68: // d
+        moveRight = false;
+        break;
+      case 16: // shift
+        sprinting = false;
+        moveSpeed = 400
+        break;  
+    }
+  };
+  const onMouseDown = function() {
+    /* startGunRotationX = controls.getObject().children[ 0 ].rotation.x
+            startGunRotationY =  controls.getObject().rotation.y */
+    mouseDown = true;
+    shooting = true;
+  };
+
+  const onMouseUp = function() {
+    mouseDown = false;
+    shooting = false;
+    shootingAudio.stop();
+    playingShootingAudio = false;
+    bulletNumber = 0;
+    changeCountdownToShot();
+  };
+  
+
+  document.addEventListener("keydown", onKeyDown, false);
+  document.addEventListener("keyup", onKeyUp, false);
+  window.addEventListener("mousedown", onMouseDown, false);
+  window.addEventListener("mouseup", onMouseUp, false);
+  
+
+  createPlayer();
+} //end of init
 
 
 function animate() {
