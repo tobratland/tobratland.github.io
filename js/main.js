@@ -4,10 +4,15 @@ import { models } from "./models.js";
 import { settings } from "./settings.js";
 import { weapons } from "./weapons.js";
 import { score } from "./challengeModeScore.js";
+import { topScores } from "./topScores.js"
 
+let meshArray = []
+var loader = new THREE.FontLoader();
 let camera, scene, renderer, controls, loadingManager;
 let wallNorth, wallEast, wallSouth, wallWest, target;
 let axes0, axes1, axes2, axes3;
+const textMaterial = new THREE.MeshPhongMaterial( { color: 0x000000, specular: 0xff0000 } );
+const headerTextMaterial = new THREE.MeshPhongMaterial( { color: 0x460024, specular: 0x460024 } );
 let prevTime = performance.now();
 let direction = new THREE.Vector3();
 let moveForward = false;
@@ -16,12 +21,18 @@ let moveLeft = false;
 let moveRight = false;
 let mouseDown = false;
 let RESOURCES_LOADED = false;
+let scoreWpnLoadTicker = 0;
+let scoreScoreLoadTicker = 0;
+let scoreNicknameLoadTicker = 0;
+
 let velocity = new THREE.Vector3();
 const USE_WIREFRAME = false;
-let playerMesh;
+let playerMesh
 let groundlevel = 10
 let hud = document.getElementById("hud");
 let meshes = {};
+const topScoreHeaders = 
+[{"weapon": "Weapon", "nickname": "Nickname", "theScore": "TopScore"}]
 let weaponSelector = document.getElementById("weaponSelector");
 let magazineSelector = document.getElementById("magazineSelector");
 let barrelAttachmentSelector = document.getElementById("barrelAttachment");
@@ -60,8 +71,6 @@ let endScoreTime = 0;
 let scoreShotsFired = score.shotsFired;
 let scoreReloaded = score.reloaded;
 let scoreWeapon = score.weapon;
-let crouching = false;
-let sprinting = false;
 let gamepadSens = document.getElementById("ps4SensNumber").value
 export let controllMode = "mouse";
 export let gamepads = {}
@@ -74,6 +83,7 @@ let shootingAudio = new Howl({
   ]
 });
 let playingShootingAudio = false;
+
 
 if (localStorage.getItem("consentedToCookies") != null) {
   consentedToCookies = localStorage.getItem("consentedToCookies");
@@ -101,7 +111,371 @@ crosshairCtx.fillRect(13, 13, 4, 4);
 init();
 animate();
 
+// functions
+function changeCountdownToShot() {
+  countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot;
+}
+
+function clearHits(target) {
+  for (let i = 0; i < target.hits.length; i++) {
+    scene.remove(target.hits[i]);
+  }
+  target.hits = [];
+}
+function clearTargets() {
+  for (let i = 0; i < targets.length; i++) {
+    let selectedObject = scene.getObjectByName(targets[i].name);
+    scene.remove(selectedObject);
+    clearHits(targets[i]);
+    collidableMeshList = collidableMeshList.filter(function(obj) {
+      return obj.name != targets[i].name;
+    });
+  }
+}
+function jump() {
+  velocity.y += 300;
+}
+
+function clearMisses() {
+  for (let i = 0; i < circleArray.length; i++) {
+    let m = scene.getObjectByName("miss");
+    scene.remove(m);
+  }
+  circleArray = [];
+}
+function reload() {
+  if (bulletsLeft === 0 && playMode === "challenge") {
+    reloadTime =
+      weapons.apexLegends[selectedWeapon].reloadTime.empty[selectedMagazine];
+  } else if (bulletsLeft > 0 && playMode === "challenge") {
+    reloadTime =
+      weapons.apexLegends[selectedWeapon].reloadTime.loaded[selectedMagazine];
+  } else {
+    reloadTime = 0;
+  }
+  if (playMode === "challenge") {
+    scoreReloaded++;
+  }
+  shootingAudio.stop();
+  playingShootingAudio = false;
+  bulletNumber = 0;
+  bulletsLeft =
+    weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
+
+  changeCountdownToShot();
+};
+function changeController() {
+  if (controllMode === "gamePad") {
+    controllerButtonGamePad.style.backgroundColor = "green";
+    controllerButtonGamePad.style.color = "white";
+    controllerButtonGamePad.style.textDecoration = "none";
+    controllerButtonMouse.style.backgroundColor = "red";
+    controllerButtonMouse.style.textDecoration = "line-through";
+    controllerButtonMouse.style.color = "grey";
+
+    window.addEventListener(
+      "gamepadconnected",
+      function(e) {
+        gamepadHandler(e, true);
+        gamepadConnected = true
+      },
+      false
+    );
+
+    window.addEventListener(
+      "gamepaddisconnected",
+      function(e) {
+        gamepadHandler(e, false);
+        gamepadConnected = false
+      },
+      false
+    );
+  } else if (controllMode === "mouse") {
+    controllerButtonMouse.style.backgroundColor = "green";
+    controllerButtonMouse.style.color = "white";
+    controllerButtonMouse.style.textDecoration = "none";
+    controllerButtonGamePad.style.backgroundColor = "red";
+    controllerButtonGamePad.style.textDecoration = "line-through";
+    controllerButtonGamePad.style.color = "grey";
+  }
+}
+async function submitScore(){
+  //if(player.score[selectedWeapon] > topScores[selectedWeapon])
+  var nickname = document.getElementById("nickname").value
+  var url = 'http://cpttheinternet-001-site1.atempurl.com/api/score';
+  let scoreWeapon
+  if(selectedWeapon == "havocTurbo"){
+    scoreWeapon = "Havoc with turbocharger"
+  } else if (selectedWeapon == "havocNoTurbo"){
+    scoreWeapon = "Havoc without turbocharger"
+  } else if (selectedWeapon == "devotionNoTurbo"){
+    scoreWeapon = "Devotion without turbocharger"
+  }else if (selectedWeapon == "devotionTurbo"){
+    scoreWeapon = "Devotion with turbocharger"
+  } else {
+    scoreWeapon = selectedWeapon.toString()
+  }
+  var data = {
+    "weapon": scoreWeapon,
+    "nickname": nickname.toString(),
+    "theScore": player.score[selectedWeapon].toString()
+  } 
+console.log(data)
+  fetch(url, {
+    method: 'POST', // or 'PUT'
+    body: JSON.stringify(data), // data can be `string` or {object}!
+    headers:{
+      'Content-Type': 'application/json'
+    }
+  }).then(res => res.json())
+  .then(response => console.log('Success:', JSON.stringify(response)))
+  .catch(error => console.error('Error:', error)); 
+  
+  console.log(player.score[selectedWeapon], topScores[selectedWeapon], nickname)
+
+}
+function setScore(){
+    let barrel, magazine
+    if(selectedMagazine == "noExtensions"){
+      magazine = 0
+    } else if (selectedMagazine == "extensionLevelOne") {
+      magazine = 1
+    }else if (selectedMagazine == "extensionLevelTwo") {
+      magazine = 2
+    }else{
+      magazine = 3
+    }
+    if(selectedBarrelAttachment == "noBarrelExtension"){
+      barrel = 0
+    } else if (selectedBarrelAttachment == "barrelExtensionLevelOne") {
+      barrel = 1
+    }else if (selectedBarrelAttachment == "barrelExtensionLevelTwo") {
+      barrel = 2
+    }else{
+      barrel = 3
+    }
+    
+    
+    let reloads = score.reloaded;
+    let time = score.time;
+    let finalScore = 100000 - ((time * 100) + (reloads * 10) + (barrel * 800) + (magazine * 800))
+
+    console.log(barrel, magazine, reloads, time, finalScore)
+    player.score[selectedWeapon] = finalScore.toFixed(0)
+}
+function selectWeapon() {
+  selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value;
+}
+function gamepadHandler(event, connecting) {
+  var gamepad = event.gamepad;
+
+  if (connecting) {
+    gamepads[gamepad.index] = gamepad;
+  } else {
+    delete gamepads[gamepad.index];
+  }
+}
+function addMovingTargets() {
+  for (let i = 0; i < numberOftargets; i++) {
+    let targetgeometry = new THREE.SphereGeometry(
+      randomNumberinRange(3, 6),
+      32,
+      32
+    );
+    target = new THREE.Mesh(
+      targetgeometry,
+      new THREE.MeshLambertMaterial({ color: 0xffff00f })
+    );
+    target.position.x = randomNumberinRange(-125, 125);
+    target.position.y = randomNumberinRange(0, 50);
+    target.position.z = randomNumberinRange(-125, 125);
+
+    target.castShadow = true;
+    scene.add(target);
+    collidableMeshList.push(target);
+    target.name = "target" + i;
+    target.hits = [];
+    target.speedX = randomNumberinRange(-0.4, 0.4);
+    target.speedY = randomNumberinRange(-0.4, 0.4);
+    target.speedZ = randomNumberinRange(-0.4, 0.4); 
+    /* target.speedX = 0
+    target.speedY = 0
+    target.speedZ = 0 */
+    targets.push(target);
+  }
+}
+function selectBarrelMod() {
+  selectedBarrelAttachment =
+    barrelAttachmentSelector.options[barrelAttachmentSelector.selectedIndex]
+      .value;
+}
+function selectMagazine() {
+  selectedMagazine =
+    magazineSelector.options[magazineSelector.selectedIndex].value;
+}
+
+function changeFov() {
+  camera.fov = document.getElementById("fovValue").value;
+  camera.updateProjectionMatrix();
+}
+function changeGamepadSens() {
+  gamepadSens = document.getElementById("ps4SensNumber").value
+}
+function updateAudio() {
+  shootingAudio = new Howl({
+    src: [
+      "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".mp3",
+      "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".ogg"
+    ]
+  });
+}
+function changeMouseSensitivity() {
+  settings.sens = document.getElementById("MouseSensNumber").value;
+  camera.updateProjectionMatrix();
+}
+
+function updateScore() {
+  if (destroyedTargets == targets.length) {
+    document.getElementById("defeatedTargets").innerHTML =
+      "You destroyed all of the targets, good job friend!";
+  } else {
+    document.getElementById("defeatedTargets").innerHTML =
+      "You only got " +
+      destroyedTargets +
+      " out of " +
+      targets.length +
+      " targets, not good!";
+  }
+  document.getElementById("endScore").innerHTML = "Your score is " + player.score[selectedWeapon];
+  document.getElementById("timeUsed").innerHTML = "Time used: " + scoreTime;
+  document.getElementById("shotsFired").innerHTML =
+    "Shots Fired: " + scoreShotsFired;
+  document.getElementById("reloadedTimes").innerHTML =
+    "Amount of times you reloaded: " + scoreReloaded;
+  document.getElementById("weaponSelected").innerHTML =
+    "Weapon used: " + scoreWeapon;
+  document.getElementById("submitNickname").style.visibility = "visible";
+}
+function updateMute() {
+  mute = document.getElementById("mute").checked;
+
+  mute === true ? (muted = true) : (muted = false); //trying shorthand if
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+//when all resources are loaded, call this function. Puts loaded resources in the map.
+function onResoucesLoaded() {
+  meshes["gun"] = models.gun.mesh.clone();
+
+  //positions the meshes
+  meshes["gun"].position.set(1, -2, -2.5);
+  meshes["gun"].rotation.y = -Math.PI;
+  meshes["gun"].scale.set(70, 70, 70);
+
+  controls.getPitch().add(meshes["gun"]);
+}
+
+function randomNumberinRange(min, max) {
+  return  Math.floor(Math.random() * (max - min + 1)) + min;
+} 
+
+function shoot() {
+  //handles everything that happens when the player shoots except for sound
+  let shotPosition = new THREE.Vector3();
+  const cameraDirection = controls
+    .getDirection(new THREE.Vector3(0, 0, 0))
+    .normalize()
+    .clone();
+  let rayCaster = new THREE.Raycaster();
+  let hitGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+  let hitMateral = new THREE.MeshBasicMaterial({ color: 0x0e0909 });
+  circle = new THREE.Mesh(hitGeometry, hitMateral);
+  circle.material.side = THREE.DoubleSide;
+  rayCaster.set(controls.getObject().position, cameraDirection);
+  let intersects = rayCaster.intersectObjects(collidableMeshList);
+  shooting = true;
+  shotPosition = intersects[0].point;
+  scene.add(circle);
+  for (let i = 0; i < targets.length; i++) {
+    if (intersects[0].object.name == "target" + [i]) {
+      targets[i].hits.push(circle);
+      circle.name = "hit";
+    } else {
+      circle.name = "miss";
+    }
+  }
+
+  circleArray.push(circle);
+
+  circle.position.set(shotPosition.x, shotPosition.y, shotPosition.z);
+
+  countdownToShot =
+    weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t;
+  let recoilXMin;
+  let recoilXMax;
+  let recoilYMin;
+  let recoilYMax;
+  //controlling recoil
+  if (
+    selectedBarrelAttachment === "barrelExtensionLevelOne" &&
+    selectedWeapon != "flatline" &&
+    selectedWeapon != "havocNoTurbo" &&
+    selectedWeapon != "havocTurbo"
+  ) {
+    recoilXMin = recoilPattern[bulletNumber].xMin * 0.9;
+    recoilXMax = recoilPattern[bulletNumber].xMax * 0.9;
+    recoilYMin = recoilPattern[bulletNumber].yMin * 0.9;
+    recoilYMax = recoilPattern[bulletNumber].yMax * 0.9;
+  } else if (
+    selectedBarrelAttachment === "barrelExtensionLevelTwo" &&
+    selectedWeapon != "flatline" &&
+    selectedWeapon != "havocNoTurbo" &&
+    selectedWeapon != "havocTurbo"
+  ) {
+    recoilXMin = recoilPattern[bulletNumber].xMin * 0.85;
+    recoilXMax = recoilPattern[bulletNumber].xMax * 0.85;
+    recoilYMin = recoilPattern[bulletNumber].yMin * 0.85;
+    recoilYMax = recoilPattern[bulletNumber].yMax * 0.85;
+  } else if (
+    selectedBarrelAttachment === "barrelExtensionLevelThree" &&
+    selectedWeapon != "flatline" &&
+    selectedWeapon != "havocNoTurbo" &&
+    selectedWeapon != "havocTurbo"
+  ) {
+    recoilXMin = recoilPattern[bulletNumber].xMin * 0.8;
+    recoilXMax = recoilPattern[bulletNumber].xMax * 0.8;
+    recoilYMin = recoilPattern[bulletNumber].yMin * 0.8;
+    recoilYMax = recoilPattern[bulletNumber].yMax * 0.8;
+  } else {
+    recoilXMin = recoilPattern[bulletNumber].xMin;
+    recoilXMax = recoilPattern[bulletNumber].xMax;
+    recoilYMin = recoilPattern[bulletNumber].yMin;
+    recoilYMax = recoilPattern[bulletNumber].yMax;
+  }
+
+  controls.getObject().children[0].rotation.x =
+    controls.getObject().children[0].rotation.x +
+    randomNumberinRange(recoilYMin, recoilYMax) * 0.0003;
+  controls.getObject().rotation.y =
+    controls.getObject().rotation.y +
+    randomNumberinRange(recoilXMin, recoilXMax) * 0.0003;
+
+  bulletNumber++;
+  bulletsLeft--;
+  if (playMode === "challenge") {
+    scoreShotsFired++;
+  }
+}
+
+
 function init() {
+  document.getElementById("submitNickname").style.visibility = "hidden";
+  fetchTopScoresAsync();
   camera = new THREE.PerspectiveCamera(
     document.getElementById("fovValue").value,
     window.innerWidth / window.innerHeight,
@@ -109,18 +483,19 @@ function init() {
     1000
   ); //sets the type of camera, size of the camera and min/max viewdistance. This is my eyes
   controls = new THREE.PointerLockControls(camera);
-  
   const blocker = document.getElementById("blocker");
   const ps4SensSelector = document.getElementById("ps4Sens")
   const mouseSenseSelector = document.getElementById("mouseSens")
   const playButton = document.getElementById("playButton");
   const challengeButton = document.getElementById("challengeButton");
+  const submitScoreButton = document.getElementById("submitScore");
   const controllerButtonGamePad = document.getElementById(
     "controllerButtonGamePad"
   );
   const controllerButtonMouse = document.getElementById(
     "controllerButtonMouse"
   );
+  
   
   ps4SensSelector.style.visibility = "hidden"
   changeController();
@@ -163,6 +538,7 @@ function init() {
   // add cookie consent
   cookieConsentButton.addEventListener("click", function() {
     privacyBlocker.style.visibility = "hidden";
+    
     consentedToCookies = true;
     localStorage.setItem("consentedToCookies", true);
   });
@@ -189,7 +565,6 @@ function init() {
       playMode = "challenge";
       clearTargets();
       changeGamepadSens()
-      endScoreTime = 0;
       scoreShotsFired = 0;
       scoreReloaded = 0;
       scoreWeapon = selectedWeapon;
@@ -200,6 +575,12 @@ function init() {
     },
     false
   );
+  submitScoreButton.addEventListener(
+    "click",
+    function(){
+      submitScore();
+    }
+  )
   clearBulletsButton.addEventListener(
     "click",
     function() {
@@ -218,6 +599,7 @@ function init() {
     crosshairCanvas.style.display = "block";
     hud.style.display = "block";
     ps4SensSelector.style.visibility = "hidden"
+    document.getElementById("submitNickname").style.visibility = "hidden";
     selectWeapon(); //selects weapon
     selectMagazine(); //selects magazinesize
     selectBarrelMod(); //selects barrelmod
@@ -275,7 +657,8 @@ function init() {
     playerMesh = new THREE.Mesh(player.mesh.geomerty, player.mesh.material);
     scene.add(playerMesh);
   }
-
+  
+  
   /* CREATE WORLD  */
 
   // floor
@@ -316,7 +699,116 @@ function init() {
     floor,
     roof
   );
-
+  
+  //get scores from api
+  async function fetchTopScoresAsync () {
+    let data = await (await fetch('http://cpttheinternet-001-site1.atempurl.com/api/score')).json() ;
+    console.log(data)
+    //adds the headers and scores to the wall after getting it from the api
+    addWeaponTopscores(topScoreHeaders)
+    addWeaponTopscores(data)
+    addScoreTopscores(topScoreHeaders)
+    addScoreTopscores(data)
+    addNicknameTopscores(topScoreHeaders)
+    addNicknameTopscores(data)
+    //make this a function! sets the score from the api to the local score, to compare to players scores.
+    topScores.spitfire = data[0].theScore
+    topScores.devotionWithTurbocharger = data[1].theScore
+    topScores.devotionWithoutTurbocharger = data[2].theScore
+    topScores.r99 = data[3].theScore
+    topScores.alternator = data[4].theScore
+    topScores.r301 = data[5].theScore
+    topScores.flatline = data[6].theScore
+    topScores.havocWithTurbocharger = data[7].theScore
+    topScores.havocWithoutTurbocharger = data[8].theScore
+    topScores.re45 = data[9].theScore
+    
+  }
+  function getTextGeometry(text, font){
+    return geometry = new THREE.TextGeometry( text, {
+      font: font,
+      size: 4,
+      height: 0.5,
+      curveSegments: 12,
+      bevelEnabled: false,
+    } );
+  }
+    
+  function addWeaponTopscores(data){
+    console.log(data[0].weapon)
+    let mesh
+    
+    for(let i = 0; i < data.length; i++) {
+      
+      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+      var geometry = getTextGeometry(data[i].weapon, font)
+        
+    if(data[0].weapon == "Weapon"){
+      mesh = new THREE.Mesh(geometry, headerTextMaterial)
+    }else {
+      mesh = new THREE.Mesh(geometry, textMaterial)
+    }
+    
+    mesh.position.set(-125, 78 - (6 * scoreWpnLoadTicker), 110)
+    mesh.rotation.y = Math.PI / 2
+    collidableMeshList.push(mesh)
+    scene.add(mesh)
+    scoreWpnLoadTicker++
+    
+      } );
+    }
+  }
+  function addScoreTopscores(data){
+    console.log(data[0].theScore)
+    let scoremesh
+    
+    for(let i = 0; i < data.length; i++) {
+      
+      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+      var geometry = getTextGeometry(data[i].theScore.toString(), font)
+        
+    if(data[0].weapon == "Weapon"){
+      scoremesh = new THREE.Mesh(geometry, headerTextMaterial)
+    }else {
+      scoremesh = new THREE.Mesh(geometry, textMaterial)
+    }
+    
+    scoremesh.position.set(-125, 78 - (6 * scoreScoreLoadTicker), 20)
+    scoremesh.rotation.y = Math.PI / 2
+    collidableMeshList.push(scoremesh)
+    scene.add(scoremesh)
+    
+    scoreScoreLoadTicker++
+      } );
+      
+    }
+  }
+  function addNicknameTopscores(data){
+    console.log(data[0].nickname)
+    let wpnMesh
+    
+    for(let i = 0; i < data.length; i++) {
+      
+      loader.load( 'fonts/helvetiker_regular.typeface.json', function ( font ) {
+      var geometry = getTextGeometry(data[i].nickname, font)
+        
+    if(data[0].weapon == "Weapon"){
+      wpnMesh = new THREE.Mesh(geometry, headerTextMaterial)
+    }else {
+      wpnMesh = new THREE.Mesh(geometry, textMaterial)
+    }
+    
+    wpnMesh.position.set(-125, 78 - (6 * scoreNicknameLoadTicker), -30)
+    wpnMesh.rotation.y = Math.PI / 2
+    collidableMeshList.push(wpnMesh)
+    scene.add(wpnMesh)
+    scoreNicknameLoadTicker++
+    
+      } );
+      
+    }
+  }
+  
   //targets
   let target1Geometry = new THREE.CircleGeometry(4, 16);
   let target1Material = new THREE.MeshBasicMaterial({ color: 0x641143 });
@@ -441,297 +933,7 @@ function init() {
 
   createPlayer();
 } //end of init
-function changeCountdownToShot() {
-  countdownToShot = weapons.apexLegends[selectedWeapon].timeToFirstShot;
-}
 
-function clearHits(target) {
-  for (let i = 0; i < target.hits.length; i++) {
-    scene.remove(target.hits[i]);
-  }
-  target.hits = [];
-}
-function clearTargets() {
-  for (let i = 0; i < targets.length; i++) {
-    let selectedObject = scene.getObjectByName(targets[i].name);
-    scene.remove(selectedObject);
-    clearHits(targets[i]);
-    collidableMeshList = collidableMeshList.filter(function(obj) {
-      return obj.name != targets[i].name;
-    });
-  }
-}
-function jump() {
-  velocity.y += 300;
-}
-
-function clearMisses() {
-  for (let i = 0; i < circleArray.length; i++) {
-    let m = scene.getObjectByName("miss");
-    scene.remove(m);
-  }
-  circleArray = [];
-}
-function reload() {
-  if (bulletsLeft === 0 && playMode === "challenge") {
-    reloadTime =
-      weapons.apexLegends[selectedWeapon].reloadTime.empty[selectedMagazine];
-  } else if (bulletsLeft > 0 && playMode === "challenge") {
-    reloadTime =
-      weapons.apexLegends[selectedWeapon].reloadTime.loaded[selectedMagazine];
-  } else {
-    reloadTime = 0;
-  }
-  if (playMode === "challenge") {
-    scoreReloaded++;
-  }
-  shootingAudio.stop();
-  playingShootingAudio = false;
-  bulletNumber = 0;
-  bulletsLeft =
-    weapons.apexLegends[selectedWeapon].magazineSize[selectedMagazine];
-
-  changeCountdownToShot();
-};
-function changeController() {
-  if (controllMode === "gamePad") {
-    controllerButtonGamePad.style.backgroundColor = "green";
-    controllerButtonGamePad.style.color = "white";
-    controllerButtonGamePad.style.textDecoration = "none";
-    controllerButtonMouse.style.backgroundColor = "red";
-    controllerButtonMouse.style.textDecoration = "line-through";
-    controllerButtonMouse.style.color = "grey";
-
-    window.addEventListener(
-      "gamepadconnected",
-      function(e) {
-        gamepadHandler(e, true);
-        gamepadConnected = true
-      },
-      false
-    );
-
-    window.addEventListener(
-      "gamepaddisconnected",
-      function(e) {
-        gamepadHandler(e, false);
-        gamepadConnected = false
-      },
-      false
-    );
-  } else if (controllMode === "mouse") {
-    controllerButtonMouse.style.backgroundColor = "green";
-    controllerButtonMouse.style.color = "white";
-    controllerButtonMouse.style.textDecoration = "none";
-    controllerButtonGamePad.style.backgroundColor = "red";
-    controllerButtonGamePad.style.textDecoration = "line-through";
-    controllerButtonGamePad.style.color = "grey";
-  }
-}
-function selectWeapon() {
-  selectedWeapon = weaponSelector.options[weaponSelector.selectedIndex].value;
-}
-function gamepadHandler(event, connecting) {
-  var gamepad = event.gamepad;
-
-  if (connecting) {
-    gamepads[gamepad.index] = gamepad;
-  } else {
-    delete gamepads[gamepad.index];
-  }
-}
-function addMovingTargets() {
-  for (let i = 0; i < numberOftargets; i++) {
-    let targetgeometry = new THREE.SphereGeometry(
-      randomNumberinRange(3, 6),
-      32,
-      32
-    );
-    target = new THREE.Mesh(
-      targetgeometry,
-      new THREE.MeshLambertMaterial({ color: 0xffff00f })
-    );
-    target.position.x = randomNumberinRange(-125, 125);
-    target.position.y = randomNumberinRange(0, 50);
-    target.position.z = randomNumberinRange(-125, 125);
-
-    target.castShadow = true;
-    scene.add(target);
-    collidableMeshList.push(target);
-    target.name = "target" + i;
-    target.hits = [];
-    target.speedX = randomNumberinRange(-0.7, 0.7) * delta;
-    target.speedY = randomNumberinRange(-0.7, 0.7) * delta;
-    target.speedZ = randomNumberinRange(-0.7, 0.7) * delta;
-    targets.push(target);
-  }
-}
-function selectBarrelMod() {
-  selectedBarrelAttachment =
-    barrelAttachmentSelector.options[barrelAttachmentSelector.selectedIndex]
-      .value;
-}
-function selectMagazine() {
-  selectedMagazine =
-    magazineSelector.options[magazineSelector.selectedIndex].value;
-}
-
-function changeFov() {
-  camera.fov = document.getElementById("fovValue").value;
-  camera.updateProjectionMatrix();
-}
-function changeGamepadSens() {
-  gamepadSens = document.getElementById("ps4SensNumber").value
-}
-function updateAudio() {
-  shootingAudio = new Howl({
-    src: [
-      "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".mp3",
-      "../audio/" + weapons.apexLegends[selectedWeapon].audio.shoot + ".ogg"
-    ]
-  });
-}
-function changeMouseSensitivity() {
-  settings.sens = document.getElementById("MouseSensNumber").value;
-  camera.updateProjectionMatrix();
-}
-
-function updateScore() {
-  if (destroyedTargets == targets.length) {
-    document.getElementById("defeatedTargets").innerHTML =
-      "You destroyed all of the targets, good job friend!";
-  } else {
-    document.getElementById("defeatedTargets").innerHTML =
-      "You only got " +
-      destroyedTargets +
-      " out of " +
-      targets.length +
-      " targets, not good!";
-  }
-
-  document.getElementById("timeUsed").innerHTML = "Time used: " + scoreTime;
-  document.getElementById("shotsFired").innerHTML =
-    "Shots Fired: " + scoreShotsFired;
-  document.getElementById("reloadedTimes").innerHTML =
-    "Amount of times you reloaded: " + scoreReloaded;
-  document.getElementById("weaponSelected").innerHTML =
-    "Weapon used: " + scoreWeapon;
-}
-function updateMute() {
-  mute = document.getElementById("mute").checked;
-
-  mute === true ? (muted = true) : (muted = false); //trying shorthand if
-}
-
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-//when all resources are loaded, call this function. Puts loaded resources in the map.
-function onResoucesLoaded() {
-  meshes["gun"] = models.gun.mesh.clone();
-
-  //positions the meshes
-  meshes["gun"].position.set(1, -2, -2.5);
-  meshes["gun"].rotation.y = -Math.PI;
-  meshes["gun"].scale.set(70, 70, 70);
-
-  controls.getPitch().add(meshes["gun"]);
-}
-
-function randomNumberinRange(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function shoot() {
-  //handles everything that happens when the player shoots except for sound
-  let shotPosition = new THREE.Vector3();
-  const cameraDirection = controls
-    .getDirection(new THREE.Vector3(0, 0, 0))
-    .normalize()
-    .clone();
-  let rayCaster = new THREE.Raycaster();
-  let hitGeometry = new THREE.SphereGeometry(0.2, 16, 16);
-  let hitMateral = new THREE.MeshBasicMaterial({ color: 0x0e0909 });
-  circle = new THREE.Mesh(hitGeometry, hitMateral);
-  circle.material.side = THREE.DoubleSide;
-  rayCaster.set(controls.getObject().position, cameraDirection);
-  let intersects = rayCaster.intersectObjects(collidableMeshList);
-  shooting = true;
-  shotPosition = intersects[0].point;
-  scene.add(circle);
-  for (let i = 0; i < targets.length; i++) {
-    if (intersects[0].object.name == "target" + [i]) {
-      targets[i].hits.push(circle);
-      circle.name = "hit";
-    } else {
-      circle.name = "miss";
-    }
-  }
-
-  circleArray.push(circle);
-
-  circle.position.set(shotPosition.x, shotPosition.y, shotPosition.z);
-
-  countdownToShot =
-    weapons.apexLegends[selectedWeapon].recoilPattern[bulletNumber].t;
-  let recoilXMin;
-  let recoilXMax;
-  let recoilYMin;
-  let recoilYMax;
-  //controlling recoil
-  if (
-    selectedBarrelAttachment === "barrelExtensionLevelOne" &&
-    selectedWeapon != "flatline" &&
-    selectedWeapon != "havocNoTurbo" &&
-    selectedWeapon != "havocTurbo"
-  ) {
-    recoilXMin = recoilPattern[bulletNumber].xMin * 0.9;
-    recoilXMax = recoilPattern[bulletNumber].xMax * 0.9;
-    recoilYMin = recoilPattern[bulletNumber].yMin * 0.9;
-    recoilYMax = recoilPattern[bulletNumber].yMax * 0.9;
-  } else if (
-    selectedBarrelAttachment === "barrelExtensionLevelTwo" &&
-    selectedWeapon != "flatline" &&
-    selectedWeapon != "havocNoTurbo" &&
-    selectedWeapon != "havocTurbo"
-  ) {
-    recoilXMin = recoilPattern[bulletNumber].xMin * 0.85;
-    recoilXMax = recoilPattern[bulletNumber].xMax * 0.85;
-    recoilYMin = recoilPattern[bulletNumber].yMin * 0.85;
-    recoilYMax = recoilPattern[bulletNumber].yMax * 0.85;
-  } else if (
-    selectedBarrelAttachment === "barrelExtensionLevelThree" &&
-    selectedWeapon != "flatline" &&
-    selectedWeapon != "havocNoTurbo" &&
-    selectedWeapon != "havocTurbo"
-  ) {
-    recoilXMin = recoilPattern[bulletNumber].xMin * 0.8;
-    recoilXMax = recoilPattern[bulletNumber].xMax * 0.8;
-    recoilYMin = recoilPattern[bulletNumber].yMin * 0.8;
-    recoilYMax = recoilPattern[bulletNumber].yMax * 0.8;
-  } else {
-    recoilXMin = recoilPattern[bulletNumber].xMin;
-    recoilXMax = recoilPattern[bulletNumber].xMax;
-    recoilYMin = recoilPattern[bulletNumber].yMin;
-    recoilYMax = recoilPattern[bulletNumber].yMax;
-  }
-
-  controls.getObject().children[0].rotation.x =
-    controls.getObject().children[0].rotation.x +
-    randomNumberinRange(recoilYMin, recoilYMax) * 0.0003;
-  controls.getObject().rotation.y =
-    controls.getObject().rotation.y +
-    randomNumberinRange(recoilXMin, recoilXMax) * 0.0003;
-
-  bulletNumber++;
-  bulletsLeft--;
-  if (playMode === "challenge") {
-    scoreShotsFired++;
-  }
-}
 
 function animate() {
   requestAnimationFrame(animate);
@@ -923,6 +1125,8 @@ function animate() {
     }
 
     if (destroyedTargets >= numberOftargets) {
+      score.time = endScoreTime;
+      setScore()
       destroyedTargets = 0;
       targets = [];
     }

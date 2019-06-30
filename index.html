@@ -1,21 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=UA-139851182-1"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-
-      gtag("config", "UA-139851182-1");
-    </script>
-
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" type="text/css" href="style.css" />
@@ -42,7 +27,7 @@
         style="width: 30; height: 30; z-index: 2; border: 0px;"
       ></canvas>
     </div>
-    
+
     <div id="blocker" class="grid-container">
     
       <div class="instructions">
@@ -165,6 +150,9 @@
           <br>
           <br>  
           <h4>Your Last score</h4>
+          <div id="endScore">
+
+          </div>
           <div id="defeatedTargets">
             </div>
           <div id="timeUsed">
@@ -175,7 +163,12 @@
           </div>
           <div id="weaponSelected">
           </div>
-          
+          <div id="submitNickname">
+            <h4>your nickname</h4>
+            <input id="nickname">
+            <br>
+            <button id="submitScore">Submit Score</button>
+          </div>
           
       </div>
       <div class="settings">
@@ -290,6 +283,7 @@
     <script src="./js/target.js" type="module"></script>
     <script src="./js/library/howler.js" type="module"></script>
     <script src="./js/player.js" type="module"></script>
+    <script src="./js/topScores.js" type="module"></script>
     <script src="./js/library/PointerLockControls.js" type="module"></script>
     <script src="./js/library/MTLLoader.js" type="module"></script>
     <script src="./js/library/OBJLoader.js" type="module"></script>
