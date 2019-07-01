@@ -286,22 +286,29 @@ function addMovingTargets() {
       targetgeometry,
       new THREE.MeshLambertMaterial({ color: 0xffff00f })
     );
-    target.position.x = randomNumberinRange(-125, 125);
-    target.position.y = randomNumberinRange(0, 50);
-    target.position.z = randomNumberinRange(-125, 125);
-
+    target.position.x = randomNumberinRange(-50, 50);
+    target.position.y = randomNumberinRange(15, 30);
+    target.position.z = randomNumberinRange(-50, 50);
+    
     target.castShadow = true;
     scene.add(target);
     collidableMeshList.push(target);
     target.name = "target" + i;
     target.hits = [];
-    target.speedX = randomNumberinRange(-0.4, 0.4);
-    target.speedY = randomNumberinRange(-0.4, 0.4);
-    target.speedZ = randomNumberinRange(-0.4, 0.4); 
+    target.speedX = selectNumberFromTwo(-40, 40);
+    target.speedY = selectNumberFromTwo(-10, 10);
+    target.speedZ = selectNumberFromTwo(-40, 40); 
     /* target.speedX = 0
     target.speedY = 0
     target.speedZ = 0 */
     targets.push(target);
+  }
+}
+function selectNumberFromTwo(number1, number2){
+  if(randomNumberinRange(0, 1) > 0.5) {
+    return number1
+  } else {
+    return number2
   }
 }
 function selectBarrelMod() {
@@ -626,6 +633,7 @@ function init() {
     if (playMode === "challenge") {
       scoreTime = (endScoreTime - startScoreTime).toFixed(3) + " seconds";
       updateScore();
+      clearTargets();
     }
   });
 
@@ -979,16 +987,16 @@ function animate() {
     if (targets[i].position.y <= 5) {
       targets[i].speedY = - (targets[i].speedY);
     }
-    if (targets[i].position.x >= 125) {
+    if (targets[i].position.x >= 120) {
       targets[i].speedX = - (targets[i].speedX);
     }
-    if (targets[i].position.x <= -125) {
+    if (targets[i].position.x <= -120) {
       targets[i].speedX = - (targets[i].speedX);
     }
-    if (targets[i].position.z >= 125) {
+    if (targets[i].position.z >= 120) {
       targets[i].speedZ = - (targets[i].speedZ);
     }
-    if (targets[i].position.z <= -125) {
+    if (targets[i].position.z <= -120) {
       targets[i].speedZ = - (targets[i].speedZ);
     }
   }
@@ -997,9 +1005,9 @@ function animate() {
     //Moves hits with targets
     if (targets[i].hits.length > 0) {
       for (let j = 0; j < targets[i].hits.length; j++) {
-        targets[i].hits[j].position.x += targets[i].speedX;
-        targets[i].hits[j].position.y += targets[i].speedY;
-        targets[i].hits[j].position.z += targets[i].speedZ;
+        targets[i].hits[j].position.x += (targets[i].speedX * delta);
+        targets[i].hits[j].position.y += (targets[i].speedY * delta);
+        targets[i].hits[j].position.z += (targets[i].speedZ * delta);
       }
       if (targets[i].hits.length > 1) {
         targets[i].material.color.setHex(0xfffff);
@@ -1020,9 +1028,9 @@ function animate() {
   }
 
   for (let i = 0; i < targets.length; i++) {
-    targets[i].position.x += targets[i].speedX;
-    targets[i].position.y += targets[i].speedY;
-    targets[i].position.z += targets[i].speedZ;
+    targets[i].position.x += (targets[i].speedX * delta);
+    targets[i].position.y += (targets[i].speedY * delta);
+    targets[i].position.z += (targets[i].speedZ * delta);
   }
 
   /* shooting, movement including jumping */
