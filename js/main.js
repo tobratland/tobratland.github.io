@@ -131,6 +131,7 @@ function clearTargets() {
       return obj.name != targets[i].name;
     });
   }
+  
 }
 function jump() {
   velocity.y += 300;
@@ -362,6 +363,7 @@ function updateScore() {
   document.getElementById("weaponSelected").innerHTML =
     "Weapon used: " + scoreWeapon;
   document.getElementById("submitNickname").style.visibility = "visible";
+
 }
 function updateMute() {
   mute = document.getElementById("mute").checked;
@@ -632,9 +634,10 @@ function init() {
     player.canShoot = false;
     if (playMode === "challenge") {
       scoreTime = (endScoreTime - startScoreTime).toFixed(3) + " seconds";
-      updateScore();
-      clearTargets();
     }
+    updateScore();
+    clearTargets();
+    destroyedTargets = 0;
   });
 
   //for loading models
@@ -1135,6 +1138,10 @@ function animate() {
     if (destroyedTargets >= numberOftargets) {
       score.time = endScoreTime;
       setScore()
+      shootingAudio.stop();
+      shooting = false;
+      playingShootingAudio = false;
+      document.exitPointerLock();
       destroyedTargets = 0;
       targets = [];
     }
